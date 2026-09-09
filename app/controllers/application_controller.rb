@@ -1,8 +1,5 @@
 class ApplicationController < ActionController::Base
-  # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
-
-  # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
   before_action :require_pin
@@ -10,12 +7,20 @@ class ApplicationController < ActionController::Base
   private
 
   def require_pin
-    unless session[:authenticated]
-      redirect_to login_path, alert: "Vennligst logg inn med PIN-kode"
-    end
+    redirect_to login_path, alert: "Vennligst logg inn med PIN-kode" unless session[:authenticated]
   end
 
   def current_agreement
-    @current_agreement ||= RentalAgreement.last || RentalAgreement.new
+    @current_agreement ||= RentalAgreement.includes(:storage_items).find_by(id: session[:rental_agreement_id])
+  end
+
+  def start_agreement
+    session.delete(:rental_agreement_id)
+    @current_agreement = nil
+  end
+
+  def store_current_agreement(agreement)
+    session[:rental_agreement_id] = agreement.id
+    @current_agreement = agreement
   end
 end

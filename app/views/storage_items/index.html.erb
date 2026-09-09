@@ -6,18 +6,18 @@
 
   <%= form_with model: @agreement, url: storage_items_path, method: :post, class: "space-y-6", id: "items_form" do |f| %>
     <div id="storage_items" class="space-y-4">
-      <% if @storage_items.empty? %>
-        <%= f.fields_for :storage_items do |item| %>
-          <%= render "item", f: item %>
-        <% end %>
-      <% else %>
-        <% @storage_items.each do |item| %>
-          <%= f.fields_for :storage_items, item do |item_f| %>
-            <%= render "item", f: item_f, item: item %>
-          <% end %>
+      <% @storage_items.each do |item| %>
+        <%= f.fields_for :storage_items, item do |item_f| %>
+          <%= render "item", f: item_f %>
         <% end %>
       <% end %>
     </div>
+
+    <template data-items-target="itemTemplate">
+      <%= f.fields_for :storage_items, StorageItem.new, child_index: "NEW_RECORD" do |item_f| %>
+        <%= render "item", f: item_f %>
+      <% end %>
+    </template>
 
     <div class="flex gap-4 mt-6">
       <%= button_tag "+ Legg til objekt", 
@@ -32,6 +32,6 @@
   <div class="mt-8 p-4 bg-gray-50 rounded-lg">
     <h3 class="text-lg font-semibold mb-2">Sammendrag</h3>
     <p class="text-gray-700">Total meter: <span id="total_meters"><%= @agreement.total_meters || 0 %></span></p>
-    <p class="text-gray-700">Total pris: <span id="total_price"><%= number_to_currency(@agreement.total_price || 0, locale: :no) %></span></p>
+    <p class="text-gray-700">Total pris: <span id="total_price"><%= number_to_currency(@agreement.total_price || 0) %></span></p>
   </div>
 </div>

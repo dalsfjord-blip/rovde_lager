@@ -1,4 +1,145 @@
-<div>
-  <h1 class="font-bold text-4xl">CustomerInfo#index</h1>
-  <p>Find me in app/views/customer_info/index.html.erb</p>
+<div class="max-w-4xl mx-auto p-6" data-controller="contract">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Del 2: Kundeinformasjon & Kontrakt</h1>
+    <%= link_to "Tilbake", storage_items_path, class: "bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm" %>
+  </div>
+
+  <%= form_with model: @agreement, url: customer_info_path, method: :patch, class: "space-y-6" do |f| %>
+    
+    <!-- Kundeinformasjon -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Kundeinformasjon</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :customer_name, "Eiers navn *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :customer_name, 
+                required: true,
+                class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_name].any?}" %>
+          <% if @agreement.errors[:customer_name].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_name].first %></p>
+          <% end %>
+        </div>
+        
+        <div>
+          <%= f.label :customer_phone, "Telefonnummer *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :customer_phone, 
+                required: true,
+                class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_phone].any?}" %>
+          <% if @agreement.errors[:customer_phone].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_phone].first %></p>
+          <% end %>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <%= f.label :customer_email, "E-postadresse *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.email_field :customer_email, 
+              required: true,
+              class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_email].any?}" %>
+        <% if @agreement.errors[:customer_email].any? %>
+          <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_email].first %></p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Hentedato -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Hentedato</h2>
+      
+      <div class="space-y-3">
+        <% @pickup_dates.each do |date| %>
+          <div class="flex items-center">
+            <%= f.radio_button :pickup_date, date[:id], 
+                  class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+            <%= f.label :pickup_date, date[:label], 
+                  value: date[:id],
+                  class: "ml-2 block text-sm text-gray-700" %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center">
+          <%= f.check_box :special_needs, 
+                class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+          <%= f.label :special_needs, "Krever spesiell/rask tilgjengelighet (avtalt på forhånd)", 
+                class: "ml-2 block text-sm text-gray-700" %>
+        </div>
+        
+        <%= f.text_area :special_needs_notes, 
+              placeholder: "Valgfrie notater om tilgjengelighet...",
+              class: "mt-2 w-full px-3 py-2 border border-gray-300 rounded-md",
+              rows: 2 %>
+      </div>
+    </div>
+
+    <!-- Bildeopplasting (midlertidig deaktivert) -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Bilder av lagringsobjekt</h2>
+      <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+        <p class="text-sm font-medium text-gray-500 mb-2">📸 Bildeopplasting (kommer snart)</p>
+        <p class="text-xs text-gray-400">Active Storage vil bli aktivert etter testing</p>
+      </div>
+    </div>
+
+    <!-- Kontrakt -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Leiekontrakt</h2>
+      
+      <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-md p-4 mb-4" 
+           data-contract-target="contractBox" 
+           data-action="scroll->contract#checkScroll">
+        <h3 class="font-semibold mb-2">Vilkår for lagring</h3>
+        <p class="text-sm text-gray-600 mb-2">
+          Dette er en standard leiekontrakt for sesonglagring av kjøretøy og båter.
+          Alle objekter lagres på eget ansvar.
+        </p>
+        <p class="text-sm text-gray-600 mb-2">
+          Lagringsperioden er fra innlevering til avtalt hentedato.
+          Betaling skjer via Vipps eller faktura.
+        </p>
+        <p class="text-sm text-gray-600">
+          Ved spørsmål, kontakt lagringsansvarlig.
+        </p>
+        <div class="mt-8 p-2 bg-gray-50 rounded text-xs text-center">
+          Scroll til bunnen for å godkjenne
+        </div>
+      </div>
+
+      <div class="flex items-center">
+        <%= f.check_box :contract_approved, 
+              class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded",
+              disabled: true,
+              data: { contract_target: "approvalCheckbox" } %>
+        <%= f.label :contract_approved, "Jeg godtar leiekontrakten", 
+              class: "ml-2 block text-sm text-gray-700" %>
+      </div>
+    </div>
+
+    <!-- E-postkopi -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <%= f.check_box :send_email_copy, 
+              checked: true,
+              class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+        <%= f.label :send_email_copy, "Send kopi av kontrakt på e-post", 
+              class: "ml-2 block text-sm text-gray-700" %>
+      </div>
+    </div>
+
+    <!-- Sammendrag -->
+    <div class="bg-gray-50 p-6 rounded-lg">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Sammendrag</h2>
+      <div class="space-y-2">
+        <p class="text-gray-700">Total meter: <strong><%= @agreement.total_meters || 0 %></strong></p>
+        <p class="text-gray-700">Total pris: <strong><%= number_to_currency(@agreement.total_price || 0) %></strong></p>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <%= f.submit "Videre til Betaling", 
+            class: "bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md" %>
+    </div>
+  <% end %>
 </div>

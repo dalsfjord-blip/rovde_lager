@@ -51,7 +51,7 @@
       <div class="mt-4 flex justify-end">
         <div class="text-right">
           <p class="text-lg font-semibold text-gray-700">Total meter: <%= @agreement.total_meters %></p>
-          <p class="text-2xl font-bold text-gray-900"><%= number_to_currency(@agreement.total_price || 0, locale: :no) %></p>
+          <p class="text-2xl font-bold text-gray-900"><%= number_to_currency(@agreement.total_price || 0) %></p>
         </div>
       </div>
     </div>
@@ -77,9 +77,9 @@
   </div>
 
   <div class="flex justify-center gap-4">
-    <%= link_to "Start ny registrering", storage_items_path, 
+    <%= link_to "Start ny registrering", storage_items_path(new: true),
           class: "bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md font-medium" %>
-    
+
     <% if @agreement.send_email_copy && @agreement.customer_email.present? %>
       <%= button_to "Send kontrakt på e-post", email_receipt_path(@agreement), 
             method: :post,

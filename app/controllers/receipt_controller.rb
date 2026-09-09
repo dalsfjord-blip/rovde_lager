@@ -1,11 +1,17 @@
 class ReceiptController < ApplicationController
+  before_action :load_agreement
+
   def show
-    @agreement = RentalAgreement.includes(:storage_items).last || RentalAgreement.new
   end
 
   def email
-    @agreement = RentalAgreement.includes(:storage_items).find(params[:id])
-    # TODO: Implement actual email sending
-    redirect_to receipt_path, notice: "Kontrakt sendt på e-post!"
+    redirect_to receipt_path, alert: "E-postsending er ikke konfigurert ennå."
+  end
+
+  private
+
+  def load_agreement
+    @agreement = current_agreement
+    redirect_to storage_items_path, alert: "Registrer minst ett lagringsobjekt først." unless @agreement
   end
 end

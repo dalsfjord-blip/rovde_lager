@@ -6,9 +6,13 @@ class SessionsController < ApplicationController
   end
 
   def create
-    if params[:pin] == ENV["TABLET_PASSCODE"] ||
-       (Rails.application.credentials.respond_to?(:tablet_passcode) && params[:pin] == Rails.application.credentials.tablet_passcode)
+    valid_pin = ENV["TABLET_PASSCODE"] ||
+      Rails.application.credentials.tablet_passcode ||
+      ("1234" if Rails.env.development? || Rails.env.test?)
+
+    if valid_pin.present? && ActiveSupport::SecurityUtils.secure_compare(params[:pin].to_s, valid_pin)
       session[:authenticated] = true
+      start_agreement
       redirect_to storage_items_path, notice: "Innlogget!"
     else
       flash.now[:alert] = "Feil PIN-kode"
@@ -17,7 +21,8 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    session[:authenticated] = false
+    session.delete(:authenticated)
+    start_agreement
     redirect_to login_path, notice: "Logget ut"
   end
 end

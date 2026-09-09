@@ -1,31 +1,32 @@
 class CustomerInfoController < ApplicationController
   before_action :load_agreement
+  before_action :set_pickup_dates, only: [:show, :update]
 
-  def index
-    @pickup_dates = [
-      { id: "2026-04-01", label: "01. april" },
-      { id: "2026-04-30", label: "30. april" },
-      { id: "2026-03-19", label: "19. mars kl. 18:00" }
-    ]
+  def show
+    render :index
   end
 
   def update
     if @agreement.update(customer_info_params)
       redirect_to payment_path, notice: "Kundeinformasjon lagret!"
     else
-      @pickup_dates = [
-        { id: "2026-04-01", label: "01. april" },
-        { id: "2026-04-30", label: "30. april" },
-        { id: "2026-03-19", label: "19. mars kl. 18:00" }
-      ]
-      render :index, status: :unprocessable_entity
+      render :show, status: :unprocessable_entity
     end
   end
 
   private
 
   def load_agreement
-    @agreement = RentalAgreement.includes(:storage_items).last || RentalAgreement.new
+    @agreement = current_agreement
+    redirect_to storage_items_path, alert: "Registrer minst ett lagringsobjekt først." unless @agreement
+  end
+
+  def set_pickup_dates
+    @pickup_dates = [
+      { id: "2026-04-01", label: "01. april" },
+      { id: "2026-04-30", label: "30. april" },
+      { id: "2026-03-19", label: "19. mars kl. 18:00" }
+    ]
   end
 
   def customer_info_params
@@ -37,8 +38,7 @@ class CustomerInfoController < ApplicationController
       :special_needs,
       :special_needs_notes,
       :send_email_copy,
-      :contract_approved,
-      photos: []
+      :contract_approved
     )
   end
 end

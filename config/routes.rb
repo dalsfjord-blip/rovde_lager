@@ -23,14 +23,14 @@ Rails.application.routes.draw do
   end
 
   # Del 2: Kundeinformasjon
-  resource :customer_info, only: [:index, :update]
-  get "contract", to: "customer_info#index", as: :contract
+  resource :customer_info, controller: "customer_info", only: [:show, :update]
+  get "contract", to: "customer_info#show", as: :contract
 
   # Del 3: Betaling
-  resource :payment, only: [:index, :create]
-  
+  resource :payment, controller: "payment", only: [:show, :create]
+
   # Kvittering
-  resource :receipt, only: [:show] do
+  resource :receipt, controller: "receipt", only: [:show] do
     post :email, on: :member
   end
 

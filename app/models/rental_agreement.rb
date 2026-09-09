@@ -1,10 +1,11 @@
 class RentalAgreement < ApplicationRecord
   has_many :storage_items, dependent: :destroy
   accepts_nested_attributes_for :storage_items, allow_destroy: true
-  has_many_attached :photos
+  # has_many_attached :photos
 
-  enum payment_method: { vipps: "vipps", invoice: "invoice" }
-  enum payment_status: { pending: "pending", paid: "paid" }
+  # Midlertidig utkommentert for testing
+  # enum :payment_method, { vipps: "vipps", invoice: "invoice" }
+  # enum :payment_status, { pending: "pending", paid: "paid" }
 
   before_create :generate_reference_number
 

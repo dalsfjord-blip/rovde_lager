@@ -1,28 +1,21 @@
 class PaymentController < ApplicationController
   before_action :load_agreement
 
-  def index
-    # Show payment options
+  def show
+    render :index
   end
 
   def create
-    if params[:payment_method] == "vipps"
-      # In development, simulate Vipps payment
-      if Rails.env.development?
-        @agreement.payment_method = :vipps
-        @agreement.payment_status = :paid
-        @agreement.contract_approved = true
-        @agreement.save!
+    case params[:payment_method]
+    when "vipps"
+      if Rails.env.development? || Rails.env.test?
+        @agreement.update!(payment_method: "vipps", payment_status: "paid")
         redirect_to receipt_path, notice: "Betaling fullført (simulert)!"
       else
-        # TODO: Real Vipps integration
-        redirect_to receipt_path, alert: "Vipps-integrasjon ikke konfigurert"
+        redirect_to payment_path, alert: "Vipps-integrasjon er ikke konfigurert."
       end
-    elsif params[:payment_method] == "invoice"
-      @agreement.payment_method = :invoice
-      @agreement.payment_status = :pending
-      @agreement.contract_approved = true
-      @agreement.save!
+    when "invoice"
+      @agreement.update!(payment_method: "invoice", payment_status: "pending")
       redirect_to receipt_path, notice: "Faktura opprettet!"
     else
       redirect_to payment_path, alert: "Vennligst velg betalingsmetode"
@@ -32,6 +25,7 @@ class PaymentController < ApplicationController
   private
 
   def load_agreement
-    @agreement = RentalAgreement.includes(:storage_items).last || RentalAgreement.new
+    @agreement = current_agreement
+    redirect_to storage_items_path, alert: "Registrer minst ett lagringsobjekt først." unless @agreement
   end
 end

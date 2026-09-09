@@ -1,0 +1,32 @@
+<div class="max-w-4xl mx-auto p-6" data-controller="items">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Del 1: Objekt- og Meterregistrering</h1>
+    <%= link_to "Logg ut", logout_path, method: :delete, class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm" %>
+  </div>
+
+  <div id="storage_items" class="space-y-4">
+    <% if @storage_items.empty? %>
+      <%= render "item", item: @agreement.storage_items.build %>
+    <% else %>
+      <% @storage_items.each do |item| %>
+        <%= render "item", item: item %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="flex gap-4 mt-6">
+    <%= button_tag "+ Legg til objekt", 
+          type: "button",
+          data: { action: "click->items#addItem" },
+          class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" %>
+    <%= link_to "Videre til Del 2", 
+          "#",
+          class: "bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md" %>
+  </div>
+
+  <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+    <h3 class="text-lg font-semibold mb-2">Sammendrag</h3>
+    <p class="text-gray-700">Total meter: <span id="total_meters">0</span></p>
+    <p class="text-gray-700">Total pris: <span id="total_price">0</span> NOK</p>
+  </div>
+</div>

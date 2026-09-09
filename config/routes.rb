@@ -13,11 +13,25 @@ Rails.application.routes.draw do
   delete "logout", to: "sessions#destroy", as: :logout
 
   # Main app routes
-  resources :storage_items, only: [:index, :new, :create, :destroy] do
+  resources :storage_items, only: [:index, :create] do
     collection do
       post :add_item
+    end
+    member do
       delete :remove_item
     end
+  end
+
+  # Del 2: Kundeinformasjon
+  resource :customer_info, only: [:index, :update]
+  get "contract", to: "customer_info#index", as: :contract
+
+  # Del 3: Betaling
+  resource :payment, only: [:index, :create]
+  
+  # Kvittering
+  resource :receipt, only: [:show] do
+    post :email, on: :member
   end
 
   # Root path

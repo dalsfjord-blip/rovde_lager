@@ -1,0 +1,47 @@
+<div class="max-w-2xl mx-auto p-6">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Del 3: Betaling</h1>
+    <%= link_to "Tilbake", contract_path, class: "bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm" %>
+  </div>
+
+  <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Betalingsalternativer</h2>
+    
+    <div class="space-y-4">
+      <%= form_with url: payment_path, method: :post, class: "space-y-4" do |f| %>
+        
+        <div class="border border-gray-200 rounded-lg p-4">
+          <div class="flex items-center">
+            <%= f.radio_button :payment_method, "vipps", 
+                  class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+            <%= f.label :payment_method, "Vipps", 
+                  value: "vipps",
+                  class: "ml-2 block text-lg font-medium text-gray-700" %>
+          </div>
+          <% if Rails.env.development? %>
+            <p class="text-sm text-gray-500 mt-1 ml-6">(Simulert betaling i utvikling)</p>
+          <% end %>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-4">
+          <div class="flex items-center">
+            <%= f.radio_button :payment_method, "invoice", 
+                  class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+            <%= f.label :payment_method, "Faktura", 
+                  value: "invoice",
+                  class: "ml-2 block text-lg font-medium text-gray-700" %>
+          </div>
+          <p class="text-sm text-gray-500 mt-1 ml-6">Faktura sendes på e-post</p>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="font-semibold mb-2 text-gray-700">Sammendrag</h3>
+          <p class="text-gray-700">Total: <%= number_to_currency(@agreement.total_price || 0, locale: :no) %></p>
+        </div>
+
+        <%= f.submit "Fullfør betaling", 
+              class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
+      <% end %>
+    </div>
+  </div>
+</div>

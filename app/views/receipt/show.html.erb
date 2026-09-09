@@ -1,0 +1,89 @@
+<div class="max-w-3xl mx-auto p-6">
+  <div class="text-center mb-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">Kvittering</h1>
+    <p class="text-gray-600">Takk for din bestilling!</p>
+  </div>
+
+  <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+    <h2 class="text-2xl font-semibold mb-4 text-gray-700">Kvitteringsdetaljer</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <p class="text-sm text-gray-500 mb-1">Referansenummer</p>
+        <p class="font-medium"><%= @agreement.reference_number %></p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500 mb-1">Dato</p>
+        <p class="font-medium"><%= l(Date.today, format: :long) %></p>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2 text-gray-700">Kundeinformasjon</h3>
+      <p class="font-medium"><%= @agreement.customer_name %></p>
+      <p class="text-gray-600"><%= @agreement.customer_phone %></p>
+      <p class="text-gray-600"><%= @agreement.customer_email %></p>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2 text-gray-700">Lagringsobjekter</h3>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beskrivelse</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg.nr.</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Meter</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @agreement.storage_items.each do |item| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= item.description || "-" %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= item.registration_number || "-" %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"><%= item.meters %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="mt-4 flex justify-end">
+        <div class="text-right">
+          <p class="text-lg font-semibold text-gray-700">Total meter: <%= @agreement.total_meters %></p>
+          <p class="text-2xl font-bold text-gray-900"><%= number_to_currency(@agreement.total_price || 0, locale: :no) %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2 text-gray-700">Betalingsinformasjon</h3>
+      <p class="text-gray-600">Betalingsmetode: <%= @agreement.payment_method&.capitalize || "Ikke valgt" %></p>
+      <p class="text-gray-600">Status: 
+        <span class="<%= @agreement.payment_status == 'paid' ? 'text-green-600 font-medium' : 'text-yellow-600' %>">
+          <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+        </span>
+      </p>
+    </div>
+
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-2 text-gray-700">Hentedato</h3>
+      <p class="text-gray-600"><%= l(@agreement.pickup_date, format: :long) if @agreement.pickup_date %></p>
+      <% if @agreement.special_needs %>
+        <p class="text-yellow-600 mt-2">⚠️ Krever spesiell tilgjengelighet</p>
+        <p class="text-gray-600 text-sm"><%= @agreement.special_needs_notes %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="flex justify-center gap-4">
+    <%= link_to "Start ny registrering", storage_items_path, 
+          class: "bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md font-medium" %>
+    
+    <% if @agreement.send_email_copy && @agreement.customer_email.present? %>
+      <%= button_to "Send kontrakt på e-post", email_receipt_path(@agreement), 
+            method: :post,
+            class: "bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md font-medium" %>
+    <% end %>
+  </div>
+</div>

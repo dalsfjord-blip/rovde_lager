@@ -22,30 +22,47 @@ export default class extends Controller {
   }
 
   lookupVehicle(event) {
-    const registrationNumber = event.target.value;
+    const registrationNumber = event.target.value.trim();
 
+    // Sjekk at vi har minst 6 tegn før vi slår opp
     if (registrationNumber.length < 6) return;
 
     fetch(`/api/vehicle_lookup?registration_number=${encodeURIComponent(registrationNumber)}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.length || !data[0].length_m) return;
-
-        const metersInput = event.target.closest(".storage-item").querySelector('[data-items-target="meters"]');
-        metersInput.value = Number(data[0].length_m).toFixed(2);
-        this.calculateTotal();
+      .then((response) => {
+        if (!response.ok) throw new Error("Fant ikke kjøretøy");
+        return response.json();
       })
-      .catch(() => {});
+      .then((data) => {
+        // Håndterer både om svaret er en liste [ { length_m: ... } ] eller et enkelt objekt { length_m: ... }
+        const item = Array.isArray(data) ? data[0] : data;
+
+        if (!item || !item.length_m) return;
+
+        // Finner meter-feltet i samme rad/kort og oppdaterer verdien
+        const metersInput = event.target.closest(".storage-item").querySelector('[data-items-target="meters"]');
+        if (metersInput) {
+          metersInput.value = Number(item.length_m).toFixed(2);
+          this.calculateTotal();
+        }
+      })
+      .catch((error) => {
+        console.log("Oppslag feilet:", error.message);
+      });
   }
 
   calculateTotal() {
     const totalMeters = this.metersTargets.reduce((total, input) => total + (parseFloat(input.value) || 0), 0);
     const totalPrice = totalMeters * this.pricePerMeterValue;
 
-    document.getElementById("total_meters").textContent = totalMeters.toFixed(2);
-    document.getElementById("total_price").textContent = `${totalPrice.toLocaleString("no-NO", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    })} NOK`;
+    const totalMetersEl = document.getElementById("total_meters");
+    const totalPriceEl = document.getElementById("total_price");
+
+    if (totalMetersEl) totalMetersEl.textContent = totalMeters.toFixed(2);
+    if (totalPriceEl) {
+      totalPriceEl.textContent = `${totalPrice.toLocaleString("no-NO", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })} NOK`;
+    }
   }
 }

@@ -38,7 +38,8 @@ class CustomerInfoController < ApplicationController
       :special_needs,
       :special_needs_notes,
       :send_email_copy,
-      :contract_approved
+      :contract_approved,
+      photos: []
     )
   end
 end

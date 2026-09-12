@@ -22,7 +22,7 @@ bin/rails db:prepare
 bin/rails server
 ```
 
-Åpne `http://localhost:3000`.
+Åpne `http://localhost:3000`. På Mac kan kameraet testes i Chrome eller Safari ved å velge «Åpne kamera» og tillate kameratilgang.
 
 I utviklingsmiljøet er PIN-koden `1234`, dersom `TABLET_PASSCODE` ikke er satt. For å bruke en egen PIN:
 
@@ -48,7 +48,7 @@ Bestillingsflyten er dekket av integrasjonstester i `test/integration/booking_fl
 
 - Vipps er bare simulert i utviklings- og testmiljø.
 - E-postsending er ikke implementert.
-- Bildeopplasting er deaktivert i grensesnittet.
+- Bilder lagres lokalt. Produksjon må bruke varig ekstern fillagring.
 - Kjøretøyoppslag avhenger av ekstern API-konfigurasjon.
 - Det bør ryddes i eksisterende whitespace-avvik før en streng lint-sjekk tas i bruk.
 

@@ -74,12 +74,29 @@
       </div>
     </div>
 
-    <!-- Bildeopplasting (midlertidig deaktivert) -->
-    <div class="bg-white p-6 rounded-lg shadow-sm">
+    <!-- Bildeopplasting -->
+    <div class="bg-white p-6 rounded-lg shadow-sm" data-controller="camera">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Bilder av lagringsobjekt</h2>
       <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
-        <p class="text-sm font-medium text-gray-500 mb-2">📸 Bildeopplasting (kommer snart)</p>
-        <p class="text-xs text-gray-400">Active Storage vil bli aktivert etter testing</p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <button type="button" style="display: inline-flex !important; align-items: center; justify-content: center; min-height: 44px; padding: 0.5rem 1rem; background: #2563eb; color: #ffffff; border: 0; border-radius: 0.375rem; font-weight: 600; cursor: pointer;" data-camera-target="startButton" data-action="click->camera#startCamera">Åpne kamera</button>
+          <%= f.label :photos, "Velg bilder", class: "inline-flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer" %>
+        </div>
+        <%= f.file_field :photos,
+              accept: "image/*",
+              capture: "environment",
+              multiple: true,
+              class: "sr-only",
+              data: { camera_target: "input", action: "change->camera#showSelectedPhotos" } %>
+        <video class="mx-auto mt-4 max-h-80 rounded-md" autoplay playsinline hidden data-camera-target="video"></video>
+        <canvas hidden data-camera-target="canvas"></canvas>
+        <div class="mt-3 flex justify-center gap-3">
+          <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md" hidden data-camera-target="captureButton" data-action="click->camera#capturePhoto">Ta bilde</button>
+          <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md" hidden data-camera-target="stopButton" data-action="click->camera#stopCamera">Lukk kamera</button>
+        </div>
+        <div class="mt-4 flex flex-wrap justify-center gap-2" data-camera-target="preview"></div>
+        <p class="text-sm font-medium text-gray-600 mt-3" data-camera-target="status">På nettbrett åpnes bakkameraet. På Mac kan du teste med innebygd kamera.</p>
+        <p class="text-xs text-gray-400 mt-1">Du kan også velge bilder som allerede finnes på enheten.</p>
       </div>
     </div>
 

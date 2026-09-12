@@ -1,37 +1,222 @@
-<div class="max-w-4xl mx-auto p-6" data-controller="items">
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-gray-800">Del 1: Objekt- og Meterregistrering</h1>
+<div class="max-w-4xl mx-auto p-4 md:p-6" data-controller="items">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Registrering</h1>
     <%= link_to "Logg ut", logout_path, method: :delete, class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm" %>
   </div>
 
   <%= form_with model: @agreement, url: storage_items_path, method: :post, class: "space-y-6", id: "items_form" do |f| %>
-    <div id="storage_items" class="space-y-4">
-      <% @storage_items.each do |item| %>
-        <%= f.fields_for :storage_items, item do |item_f| %>
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Lagringsobjekt</h2>
+      <div id="storage_items" class="space-y-4">
+        <% @storage_items.each do |item| %>
+          <%= f.fields_for :storage_items, item do |item_f| %>
+            <%= render "item", f: item_f %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <template data-items-target="itemTemplate">
+        <%= f.fields_for :storage_items, StorageItem.new, child_index: "NEW_RECORD" do |item_f| %>
           <%= render "item", f: item_f %>
         <% end %>
-      <% end %>
+      </template>
+
+      <button type="button" data-action="click->items#addItem" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">+ Legg til objekt</button>
     </div>
 
-    <template data-items-target="itemTemplate">
-      <%= f.fields_for :storage_items, StorageItem.new, child_index: "NEW_RECORD" do |item_f| %>
-        <%= render "item", f: item_f %>
-      <% end %>
-    </template>
-
-    <div class="flex gap-4 mt-6">
-      <%= button_tag "+ Legg til objekt", 
-            type: "button",
-            data: { action: "click->items#addItem" },
-            class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" %>
-      <%= f.submit "Lagre og videre til Del 2", 
-            class: "bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md" %>
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Kundeinformasjon</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :customer_name, "Eiers navn *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :customer_name, required: true, class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_name].any?}" %>
+          <% if @agreement.errors[:customer_name].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_name].first %></p>
+          <% end %>
+        </div>
+        <div>
+          <%= f.label :customer_phone, "Telefonnummer *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :customer_phone, required: true, class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_phone].any?}" %>
+          <% if @agreement.errors[:customer_phone].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_phone].first %></p>
+          <% end %>
+        </div>
+      </div>
+      <div class="mt-4">
+        <%= f.label :customer_email, "E-postadresse *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.email_field :customer_email, required: true, class: "w-full px-3 py-2 border border-gray-300 rounded-md #{'border-red-500' if @agreement.errors[:customer_email].any?}" %>
+        <% if @agreement.errors[:customer_email].any? %>
+          <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:customer_email].first %></p>
+        <% end %>
+      </div>
     </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Hentedato</h2>
+      <div class="space-y-3">
+        <% @pickup_dates.each do |date| %>
+          <div class="flex items-center">
+            <%= f.radio_button :pickup_date, date[:id], class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+            <%= f.label :pickup_date, date[:label], value: date[:id], class: "ml-2 block text-sm text-gray-700" %>
+          </div>
+        <% end %>
+      </div>
+      <div class="mt-4">
+        <div class="flex items-center">
+          <%= f.check_box :special_needs, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+          <%= f.label :special_needs, "Krever spesiell/rask tilgjengelighet (avtalt på forhånd)", class: "ml-2 block text-sm text-gray-700" %>
+        </div>
+        <%= f.text_area :special_needs_notes, placeholder: "Valgfrie notater om tilgjengelighet...", class: "mt-2 w-full px-3 py-2 border border-gray-300 rounded-md", rows: 2 %>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Bilder av lagringsobjekt</h2>
+      <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+        <button type="button" id="open_camera" style="display: inline-flex !important; align-items: center; justify-content: center; min-height: 44px; padding: 0.5rem 1rem; background: #2563eb; color: #ffffff; border: 0; border-radius: 0.375rem; font-weight: 600; cursor: pointer;">Åpne kamera</button>
+        <%= f.file_field :photos, accept: "image/*", capture: "environment", multiple: true, class: "sr-only", id: "camera_photos" %>
+        <video id="camera_preview" class="mx-auto mt-4 max-h-80 rounded-md" autoplay playsinline hidden></video>
+        <canvas id="camera_canvas" hidden></canvas>
+        <div class="mt-3 flex justify-center gap-3">
+          <button type="button" id="capture_photo" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md" hidden>Ta bilde</button>
+          <button type="button" id="close_camera" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md" hidden>Lukk kamera</button>
+        </div>
+        <div id="camera_photo_preview" class="mt-4 flex flex-wrap justify-center gap-2"></div>
+        <p id="camera_status" class="text-sm font-medium text-gray-600 mt-3">Bildene tas direkte med kameraet.</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Leiekontrakt</h2>
+      <div id="contract_text" class="border border-gray-200 rounded-md p-4 mb-4 text-sm text-gray-600" style="height: 16rem; overflow-y: auto;" data-items-target="contractText" data-action="scroll->items#enableContractApproval">
+        <p class="mb-3">Denne avtalen gjelder sesonglagring av registrerte lagringsobjekter hos Rovde Lager. Kunden er ansvarlig for at opplysninger om objekt, eier og hentedato er korrekte. Lagring skjer i den perioden som fremgår av avtalen og avsluttes når objektet er hentet eller annen skriftlig avtale er inngått. Avtalen gjelder fra innleveringstidspunktet, og kunden må kontakte lagringsansvarlig dersom opplysningene endres.</p>
+        <p class="mb-3">Objektet leveres og hentes etter avtale. Kunden skal sørge for at objektet er forsvarlig klargjort, sikret og merket. Nøkler, tilhengere, løst utstyr og personlige eiendeler skal ikke oppbevares i eller ved objektet med mindre dette er særskilt avtalt. Kunden er selv ansvarlig for forsikring av objektet og innholdet.</p>
+        <p class="mb-3">Rovde Lager kan ikke holdes ansvarlig for normal slitasje, forhold som skyldes mangelfull klargjøring, eller skade som følger av force majeure, brann, vannskade, innbrudd eller andre hendelser utenfor vår rimelige kontroll. Dersom skade eller avvik oppdages ved innlevering eller henting, skal dette meldes til lagringsansvarlig uten ugrunnet opphold.</p>
+        <p class="mb-3">Betaling skjer med valgt betalingsmetode. Ved faktura gjelder oppgitt betalingsfrist. Ved forsinket betaling kan renter og gebyrer påløpe i tråd med gjeldende regler. Kunden er ansvarlig for å oppgi korrekt e-postadresse dersom avtaledokumentasjon ønskes tilsendt, og for å kontrollere at mottatt informasjon er korrekt.</p>
+        <p class="mb-3">Kunden gir Rovde Lager adgang til å flytte objektet dersom dette er nødvendig for sikkerhet, drift eller tilgjengelighet. Slik flytting skal utføres med normal aktsomhet. Eventuelle bilder tas som dokumentasjon av objektets tilstand ved innlevering. Bildene lagres sammen med avtalen og brukes bare til administrasjon av lagringsforholdet.</p>
+        <p class="mb-3">Objektet må hentes på avtalt dato. Hvis henting forsinkes, må kunden ta kontakt på forhånd for å avtale videre lagring. Ekstra lagring kan medføre ytterligere kostnader. Rovde Lager kan endre praktiske rutiner for inn- og utlevering når det er nødvendig av hensyn til sikkerhet eller drift.</p>
+        <p class="mb-3">Ved spørsmål eller endringer må kunden kontakte lagringsansvarlig før henting. Ved å godkjenne avtalen bekrefter kunden at vilkårene er lest og akseptert.</p>
+      </div>
+      <div class="flex items-center">
+        <%= f.check_box :contract_approved, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded", disabled: true, data: { items_target: "contractApproval" } %>
+        <%= f.label :contract_approved, "Jeg har lest og godkjenner leiekontrakten", class: "ml-2 block text-sm text-gray-700" %>
+      </div>
+      <% if @agreement.errors[:contract_approved].any? %>
+        <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:contract_approved].first %></p>
+      <% end %>
+      <div class="flex items-center mt-4">
+        <%= f.check_box :send_email_copy, checked: @agreement.send_email_copy.nil? || @agreement.send_email_copy, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+        <%= f.label :send_email_copy, "Send avtaleteksten på e-post", class: "ml-2 block text-sm text-gray-700" %>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Betaling</h2>
+      <div class="space-y-3">
+        <div class="border border-gray-200 rounded-lg p-4 flex items-center">
+          <%= f.radio_button :payment_method, "vipps", required: true, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+          <%= f.label :payment_method, "Vipps", value: "vipps", class: "ml-2 block text-lg font-medium text-gray-700" %>
+        </div>
+        <div class="border border-gray-200 rounded-lg p-4 flex items-center">
+          <%= f.radio_button :payment_method, "invoice", class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+          <%= f.label :payment_method, "Faktura", value: "invoice", class: "ml-2 block text-lg font-medium text-gray-700" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-50 p-4 md:p-6 rounded-lg">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Sammendrag</h2>
+      <p class="text-gray-700">Total meter: <strong id="total_meters"><%= @agreement.total_meters || 0 %></strong></p>
+      <p class="text-gray-700">Total pris: <strong id="total_price"><%= number_to_currency(@agreement.total_price || 0) %></strong></p>
+    </div>
+
+    <%= f.submit "Fullfør registrering", class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
   <% end %>
-
-  <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-    <h3 class="text-lg font-semibold mb-2">Sammendrag</h3>
-    <p class="text-gray-700">Total meter: <span id="total_meters"><%= @agreement.total_meters || 0 %></span></p>
-    <p class="text-gray-700">Total pris: <span id="total_price"><%= number_to_currency(@agreement.total_price || 0) %></span></p>
-  </div>
 </div>
+
+<%= javascript_tag nonce: true do %>
+  (() => {
+    const button = document.getElementById("open_camera");
+    const input = document.getElementById("camera_photos");
+    const video = document.getElementById("camera_preview");
+    const canvas = document.getElementById("camera_canvas");
+    const captureButton = document.getElementById("capture_photo");
+    const closeButton = document.getElementById("close_camera");
+    const preview = document.getElementById("camera_photo_preview");
+    const status = document.getElementById("camera_status");
+    const contractText = document.getElementById("contract_text");
+    const contractApproval = document.getElementById("rental_agreement_contract_approved");
+    let stream;
+
+    if (!button || button.dataset.cameraInitialized) return;
+    button.dataset.cameraInitialized = "true";
+
+    const stopCamera = () => {
+      stream?.getTracks().forEach((track) => track.stop());
+      stream = null;
+      video.srcObject = null;
+      video.hidden = true;
+      captureButton.hidden = true;
+      closeButton.hidden = true;
+      button.hidden = false;
+    };
+
+    const showCamera = (newStream) => {
+      stream = newStream;
+      video.srcObject = stream;
+      video.hidden = false;
+      captureButton.hidden = false;
+      closeButton.hidden = false;
+      button.hidden = true;
+      status.textContent = "Kameraet er klart.";
+    };
+
+    button.addEventListener("click", async () => {
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        status.textContent = "Kamera krever localhost eller HTTPS. Åpne appen på http://localhost:3000 eller bruk HTTPS.";
+        return;
+      }
+
+      try {
+        showCamera(await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }));
+      } catch (error) {
+        try {
+          showCamera(await navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+        } catch (fallbackError) {
+          status.textContent = fallbackError.name === "NotAllowedError" ? "Kameratilgang ble avslått. Tillat kamera for denne siden i nettleserens innstillinger." : `Kameraet kunne ikke åpnes (${fallbackError.name}).`;
+        }
+      }
+    });
+
+    captureButton.addEventListener("click", () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+
+        const files = new DataTransfer();
+        Array.from(input.files).forEach((file) => files.items.add(file));
+        const file = new File([blob], `lagringsobjekt-${Date.now()}.jpg`, { type: "image/jpeg" });
+        files.items.add(file);
+        input.files = files.files;
+        const image = document.createElement("img");
+        image.src = URL.createObjectURL(file);
+        image.alt = "Forhåndsvisning av lagringsobjekt";
+        image.className = "h-24 w-24 rounded-md object-cover";
+        preview.appendChild(image);
+        status.textContent = `${input.files.length} bilde(r) klart for lagring.`;
+      }, "image/jpeg", 0.85);
+    });
+
+    closeButton.addEventListener("click", stopCamera);
+
+    const enableContractApproval = () => {
+      if (contractText.scrollHeight - contractText.scrollTop <= contractText.clientHeight + 1) {
+        contractApproval.disabled = false;
+      }
+    };
+
+    contractText.addEventListener("scroll", enableContractApproval);
+  })();
+<% end %>

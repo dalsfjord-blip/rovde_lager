@@ -11,6 +11,7 @@ class RentalAgreement < ApplicationRecord
 
   validates :customer_name, :customer_phone, :customer_email, presence: true
   validates :customer_email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :contract_approved, inclusion: { in: [true], message: "må godkjennes" }
   validates :total_meters, :total_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   private

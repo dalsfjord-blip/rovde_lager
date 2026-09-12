@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["meters", "itemTemplate"];
+  static targets = ["meters", "itemTemplate", "contractText", "contractApproval"];
   static values = { pricePerMeter: { type: Number, default: 700 } };
 
   connect() {
@@ -48,6 +48,14 @@ export default class extends Controller {
       .catch((error) => {
         console.log("Oppslag feilet:", error.message);
       });
+  }
+
+  enableContractApproval() {
+    const box = this.contractTextTarget;
+
+    if (box.scrollHeight - box.scrollTop <= box.clientHeight + 1) {
+      this.contractApprovalTarget.disabled = false;
+    }
   }
 
   calculateTotal() {

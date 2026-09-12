@@ -62,3 +62,9 @@ Bestillingsflyten er dekket av integrasjonstester i `test/integration/booking_fl
 3. Konfigurere varig og sikker fillagring for bilder i produksjon.
 4. Legge til administrasjon og oversikt over avtaler.
 5. Utvide testdekning for valideringsfeil og betalingsscenarier.
+
+
+intern huskelist:
+angre knapp
+sms info neste sesong
+

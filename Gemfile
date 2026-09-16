@@ -63,3 +63,5 @@ group :development do
 end
 
 gem "httparty", "~> 0.24.2"
+
+gem "faraday"

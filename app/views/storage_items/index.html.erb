@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto p-4 md:p-6" data-controller="items">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Registrering</h1>
-    <%= link_to "Logg ut", logout_path, method: :delete, class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm" %>
+    <%= button_to "Logg ut", logout_path, method: :delete, class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm" %>
   </div>
 
   <%= form_with model: @agreement, url: storage_items_path, method: :post, class: "space-y-6", id: "items_form" do |f| %>
@@ -70,6 +70,10 @@
       </div>
     </div>
 
+    <div class="flex justify-end">
+      <%= link_to "Tøm skjema", storage_items_path(new: true), data: { turbo_confirm: "Vil du tømme hele skjemaet? Alle opplysninger du ikke har sendt inn, blir slettet." }, class: "bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium" %>
+    </div>
+
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Bilder av lagringsobjekt</h2>
       <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
@@ -112,15 +116,10 @@
 
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Betaling</h2>
+      <%= f.hidden_field :payment_method, id: "payment_method", required: true %>
       <div class="space-y-3">
-        <div class="border border-gray-200 rounded-lg p-4 flex items-center">
-          <%= f.radio_button :payment_method, "vipps", required: true, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
-          <%= f.label :payment_method, "Vipps", value: "vipps", class: "ml-2 block text-lg font-medium text-gray-700" %>
-        </div>
-        <div class="border border-gray-200 rounded-lg p-4 flex items-center">
-          <%= f.radio_button :payment_method, "invoice", class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
-          <%= f.label :payment_method, "Faktura", value: "invoice", class: "ml-2 block text-lg font-medium text-gray-700" %>
-        </div>
+        <button type="button" data-payment-method="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Vipps</button>
+        <button type="button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Faktura</button>
       </div>
     </div>
 
@@ -146,6 +145,7 @@
     const status = document.getElementById("camera_status");
     const contractText = document.getElementById("contract_text");
     const contractApproval = document.getElementById("rental_agreement_contract_approved");
+    const paymentMethod = document.getElementById("payment_method");
     let stream;
 
     if (!button || button.dataset.cameraInitialized) return;
@@ -218,5 +218,11 @@
     };
 
     contractText.addEventListener("scroll", enableContractApproval);
+
+    document.querySelectorAll("[data-payment-method]").forEach((button) => {
+      button.addEventListener("click", () => {
+        paymentMethod.value = button.dataset.paymentMethod;
+      });
+    });
   })();
 <% end %>

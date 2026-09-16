@@ -18,7 +18,9 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "#contract_text[style*='overflow-y: auto']"
     assert_select "input[name='rental_agreement[contract_approved]'][data-items-target='contractApproval'][disabled]"
     assert_select "label", "Send avtaleteksten på e-post"
-    assert_select "input[name='rental_agreement[payment_method]']", 2
+    assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
+    assert_select "button[data-payment-method='vipps']", "Vipps"
+    assert_select "button[data-payment-method='invoice']", "Faktura"
 
     post storage_items_path, params: registration_params
 

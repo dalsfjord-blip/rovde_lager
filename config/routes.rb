@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   delete "logout", to: "sessions#destroy", as: :logout
 
   # Main app routes
-  resources :storage_items, only: [:index, :create] do
+  resources :storage_items, only: [ :index, :create ] do
     collection do
       post :add_item
     end
@@ -23,14 +23,19 @@ Rails.application.routes.draw do
   end
 
   # Del 2: Kundeinformasjon
-  resource :customer_info, controller: "customer_info", only: [:show, :update]
+  resource :customer_info, controller: "customer_info", only: [ :show, :update ]
   get "contract", to: "customer_info#show", as: :contract
 
-  # Del 3: Betaling
-  resource :payment, controller: "payment", only: [:show, :create]
+  # Del 3: Betaling (OPPDATERT MED VIPPS CALLBACK)
+  resource :payment, controller: "payment", only: [ :show, :create ] do
+    get :vipps_callback, on: :member
+  end
+
+  # Webhook fra Vipps
+  post "webhooks/vipps", to: "vipps_webhooks#receive"
 
   # Kvittering
-  resource :receipt, controller: "receipt", only: [:show] do
+  resource :receipt, controller: "receipt", only: [ :show ] do
     post :email, on: :member
   end
 

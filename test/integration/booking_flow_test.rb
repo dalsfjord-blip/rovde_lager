@@ -15,8 +15,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Registrering"
     assert_select "button", "Åpne kamera"
-    assert_select "#contract_text[style*='overflow-y: auto']"
-    assert_select "input[name='rental_agreement[contract_approved]'][data-items-target='contractApproval'][disabled]"
+    assert_select "#contract_text:not([style]):not([data-action])"
+    assert_select "input[name='rental_agreement[contract_approved]']:not([disabled])"
     assert_select "label", "Send avtaleteksten på e-post"
     assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
     assert_select "button[data-payment-method='vipps']", "Vipps"

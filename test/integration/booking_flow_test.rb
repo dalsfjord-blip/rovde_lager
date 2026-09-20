@@ -7,7 +7,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
-  test "completes registration with an invoice from one form" do
+  test "completes a business registration with an invoice from one form" do
     sign_in
 
     get storage_items_path
@@ -20,9 +20,13 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "label", "Send avtaleteksten på e-post"
     assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
     assert_select "button[data-payment-method='vipps']", "Vipps"
-    assert_select "button[data-payment-method='invoice']", "Faktura"
+    assert_select "button[data-payment-method='invoice']", "Faktura for bedrift"
+    assert_select "input[name='rental_agreement[billing_company_name]']", 1
+    assert_select "input[name='rental_agreement[billing_organization_number]']", 1
 
-    post storage_items_path, params: registration_params
+    assert_enqueued_with(job: CreatePowerOfficeInvoiceJob) do
+      post storage_items_path, params: registration_params
+    end
 
     agreement = RentalAgreement.last
     assert_redirected_to receipt_path
@@ -33,6 +37,9 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert agreement.send_email_copy
     assert_equal "invoice", agreement.payment_method
     assert_equal "pending", agreement.payment_status
+    assert_equal "Rovde AS", agreement.billing_company_name
+    assert_equal "123456789", agreement.billing_organization_number
+    assert_equal "queued", agreement.invoice_sync_status
 
     get receipt_path
 
@@ -47,12 +54,21 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     photo.write("image data")
     photo.close
 
-    post storage_items_path, params: registration_params(photos: [Rack::Test::UploadedFile.new(photo.path, "image/jpeg")])
+    post storage_items_path, params: registration_params(payment_method: "vipps", photos: [Rack::Test::UploadedFile.new(photo.path, "image/jpeg")])
 
     assert_redirected_to receipt_path
     assert_equal 1, RentalAgreement.last.reload.photos.count
   ensure
     photo.unlink
+  end
+
+  test "rejects an invoice without valid business details" do
+    sign_in
+
+    post storage_items_path, params: registration_params(billing_company_name: "", billing_organization_number: "123")
+
+    assert_response :unprocessable_entity
+    assert_includes response.body, "må bestå av ni sifre"
   end
 
   test "requires contract approval before completing registration" do
@@ -71,7 +87,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       customer_email: "eksisterende@example.com",
       contract_approved: true,
       total_meters: 3,
-      total_price: 2100
+      total_price: 2100,
+      payment_method: "vipps"
     )
 
     sign_in
@@ -83,14 +100,16 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
 
   private
 
-  def registration_params(photos: [])
+  def registration_params(payment_method: "invoice", billing_company_name: "Rovde AS", billing_organization_number: "123 456 789", photos: [])
     {
       rental_agreement: {
         customer_name: "Ola Nordmann",
         customer_phone: "12345678",
         customer_email: "ola@example.com",
         pickup_date: "2026-04-01",
-        payment_method: "invoice",
+        payment_method: payment_method,
+        billing_company_name: billing_company_name,
+        billing_organization_number: billing_organization_number,
         contract_approved: "1",
         send_email_copy: "1",
         photos: photos,

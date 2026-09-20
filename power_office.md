@@ -245,3 +245,21 @@ HTTP-kall skal stubbes i automatiske tester. Ende-til-ende-test gjøres manuelt 
 - Skal hver lagringsgjenstand være egen fakturalinje, eller skal fakturaen ha én samlet linje?
 - Hvilken betalingsfrist, fakturatekst og referanse skal brukes?
 - Hvem følger opp fakturaer som feiler eller blir kreditert?
+
+## E-post fra Power office kundeservice
+Takk for henvendelsen, og for en god beskrivelse av det du skal bygge.
+ 
+Om utviklerkontoen: Det er ikke mulig å registrere seg selv i utviklerportalen – brukere opprettes av oss når vi har mottatt et registreringsskjema for demomiljøet. Det er derfor registreringen ikke gikk gjennom. Slik kommer du i gang:
+Fyll ut demoskjema: Registrering for demomiljø . Oppgi deg selv som Lead Developer.
+Invitasjon til utviklerportalen: Når skjemaet er behandlet, får du en invitasjon til developer.poweroffice.net på e-postadressen du oppga. Der får du subscription key, application key og client key til en fiktiv testklient i demomiljøet.
+Gjør testkall: Sett opp løsningen din mot demomiljøet og gjør noen vellykkede kall mot de endepunktene du trenger.
+ 
+Skulle skjemaet avvise e-postadressen din, gi oss beskjed i denne tråden, så hjelper vi deg videre.
+ 
+Om nøklene og koblingen mot Rovde Industripark: Integrasjonen din identifiseres med en application key (din nøkkel), mens client key er unik per regnskapsklient i PowerOffice Go. I produksjon får du den ved at en administrator på Rovde Industripark sin klient – typisk regnskapsføreren – legger til integrasjonen under Meny → Innstillinger → Utvidelser → Legg til utvidelse → Egendefinert og oppgir application key. Da genereres client key, som vises kun én gang og må lagres sikkert. Det er beskrevet i detalj i Adding the integration to a client . Dette steget kommer etter demotesting, så det trenger du ikke tenke på ennå.
+ 
+Om løsningen din: Faktura og Vipps-betaling håndteres som to ulike flyter i PowerOffice Go. Fakturering går normalt via salgsordre som faktureres fra systemet (eller ferdige fakturaer som bokføres), mens Vipps-betalinger registreres som egne betalingshendelser. Anbefalt oppsett for begge er beskrevet i eCommerce, POS and payments i utviklerportalen – verdt å lese før du begynner å kode.
+ 
+Veien videre til produksjon: Når integrasjonen fungerer stabilt i demo, sender du oss en oppdatering i denne tråden. Vi sjekker loggene, og oversender så søknadsskjemaet for produksjonstilgang. Merk at Visma Developer Terms sendes til digital signering til den som oppgis som juridisk eier av integrasjonen i det skjemaet.
+ 
+Lykke til med testingen, og si gjerne fra om du har tekniske spørsmål underveis.

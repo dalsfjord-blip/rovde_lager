@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_155850) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,14 +43,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_155850) do
   end
 
   create_table "rental_agreements", force: :cascade do |t|
+    t.string "billing_company_name"
+    t.string "billing_organization_number"
     t.boolean "contract_approved"
     t.datetime "created_at", null: false
     t.string "customer_email"
     t.string "customer_name"
     t.string "customer_phone"
+    t.string "invoice_sync_error"
+    t.string "invoice_sync_status"
+    t.datetime "invoice_synced_at"
     t.string "payment_method"
     t.string "payment_status"
     t.date "pickup_date"
+    t.string "power_office_customer_id"
+    t.string "power_office_invoice_id"
+    t.string "power_office_invoice_number"
+    t.string "power_office_sales_order_id"
     t.string "reference_number"
     t.boolean "send_email_copy"
     t.boolean "special_needs"

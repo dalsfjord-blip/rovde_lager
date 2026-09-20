@@ -15,6 +15,7 @@ class StorageItemsController < ApplicationController
     set_payment_status
 
     if @agreement.save
+      CreatePowerOfficeInvoiceJob.perform_later(@agreement.id) if @agreement.invoice?
       store_current_agreement(@agreement)
       redirect_to receipt_path, notice: payment_notice
     else
@@ -49,6 +50,8 @@ class StorageItemsController < ApplicationController
       :send_email_copy,
       :contract_approved,
       :payment_method,
+      :billing_company_name,
+      :billing_organization_number,
       photos: [],
       storage_items_attributes: [:id, :registration_number, :description, :meters, :_destroy]
     )
@@ -62,10 +65,11 @@ class StorageItemsController < ApplicationController
 
   def set_payment_status
     @agreement.payment_status = @agreement.payment_method == "vipps" ? "paid" : "pending"
+    @agreement.invoice_sync_status = "queued" if @agreement.invoice?
   end
 
   def payment_notice
-    @agreement.payment_method == "vipps" ? "Betaling fullført (simulert)!" : "Faktura opprettet!"
+    @agreement.payment_method == "vipps" ? "Betaling fullført (simulert)!" : "Faktura behandles."
   end
 
   def set_pickup_dates

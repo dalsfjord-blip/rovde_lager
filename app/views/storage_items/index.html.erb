@@ -115,7 +115,24 @@
       <%= f.hidden_field :payment_method, id: "payment_method", required: true %>
       <div class="space-y-3">
         <button type="button" data-payment-method="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Vipps</button>
-        <button type="button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Faktura</button>
+        <button type="button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Faktura for bedrift</button>
+      </div>
+      <div id="business_invoice_fields" class="mt-4 space-y-4 border-t border-gray-200 pt-4" hidden>
+        <p class="text-sm text-gray-600">Faktura er kun tilgjengelig for bedrifter. Opplysningene brukes til fakturering gjennom PowerOffice.</p>
+        <div>
+          <%= f.label :billing_company_name, "Bedriftsnavn *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :billing_company_name, id: "billing_company_name", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
+          <% if @agreement.errors[:billing_company_name].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:billing_company_name].first %></p>
+          <% end %>
+        </div>
+        <div>
+          <%= f.label :billing_organization_number, "Organisasjonsnummer *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :billing_organization_number, id: "billing_organization_number", inputmode: "numeric", pattern: "[0-9 ]{9,}", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
+          <% if @agreement.errors[:billing_organization_number].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:billing_organization_number].first %></p>
+          <% end %>
+        </div>
       </div>
     </div>
 
@@ -142,6 +159,9 @@
     const contractText = document.getElementById("contract_text");
     const contractApproval = document.getElementById("rental_agreement_contract_approved");
     const paymentMethod = document.getElementById("payment_method");
+    const businessInvoiceFields = document.getElementById("business_invoice_fields");
+    const billingCompanyName = document.getElementById("billing_company_name");
+    const billingOrganizationNumber = document.getElementById("billing_organization_number");
     let stream;
 
     if (!button || button.dataset.cameraInitialized) return;
@@ -215,10 +235,23 @@
 
     contractText.addEventListener("scroll", enableContractApproval);
 
+    const setPaymentMethod = (method) => {
+      const invoiceSelected = method === "invoice";
+      paymentMethod.value = method;
+      businessInvoiceFields.hidden = !invoiceSelected;
+      billingCompanyName.required = invoiceSelected;
+      billingOrganizationNumber.required = invoiceSelected;
+
+      if (!invoiceSelected) {
+        billingCompanyName.value = "";
+        billingOrganizationNumber.value = "";
+      }
+    };
+
     document.querySelectorAll("[data-payment-method]").forEach((button) => {
-      button.addEventListener("click", () => {
-        paymentMethod.value = button.dataset.paymentMethod;
-      });
+      button.addEventListener("click", () => setPaymentMethod(button.dataset.paymentMethod));
     });
+
+    if (paymentMethod.value) setPaymentMethod(paymentMethod.value);
   })();
 <% end %>

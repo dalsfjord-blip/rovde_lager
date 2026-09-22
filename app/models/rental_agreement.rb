@@ -13,6 +13,7 @@ class RentalAgreement < ApplicationRecord
   validates :payment_method, inclusion: { in: %w[vipps invoice] }
   validates :billing_company_name, :billing_organization_number, presence: true, if: :invoice?
   validates :billing_organization_number, format: { with: /\A\d{9}\z/, message: "må bestå av ni sifre" }, if: :invoice?
+  validate :photo_count_within_limit
   validate :invoice_requires_business_details
 
   def invoice?
@@ -29,6 +30,10 @@ class RentalAgreement < ApplicationRecord
     return unless invoice?
 
     errors.add(:payment_method, "kan bare brukes for bedrifter") unless billing_company_name.present? && billing_organization_number.present?
+  end
+
+  def photo_count_within_limit
+    errors.add(:photos, "kan maksimalt inneholde 10 bilder") if photos.attachments.size > 10
   end
 
   def generate_reference_number

@@ -1,0 +1,40 @@
+# fly.toml app configuration file
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = 'rovde-lager'
+primary_region = 'arn'  # Stockholm, Sweden (nærmeste Norge)
+
+[build]
+
+[deploy]
+  release_command = './bin/rails db:prepare'
+
+[env]
+  RAILS_ENV = 'production'
+  RAILS_LOG_TO_STDOUT = 'true'
+  RAILS_SERVE_STATIC_FILES = 'true'
+  APP_HOST = 'rovde-lager.fly.dev'
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 1000
+    soft_limit = 1000
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Persistent storage for Active Storage uploads
+[[mounts]]
+  source = 'rovde_lager_storage'
+  destination = '/rails/storage'
+  initial_size = '10gb'

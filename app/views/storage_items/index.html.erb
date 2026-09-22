@@ -77,16 +77,12 @@
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Bilder av lagringsobjekt</h2>
       <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
-        <button type="button" id="open_camera" style="display: inline-flex !important; align-items: center; justify-content: center; min-height: 44px; padding: 0.5rem 1rem; background: #2563eb; color: #ffffff; border: 0; border-radius: 0.375rem; font-weight: 600; cursor: pointer;">Åpne kamera</button>
         <%= f.file_field :photos, accept: "image/*", capture: "environment", multiple: true, class: "sr-only", id: "camera_photos" %>
-        <video id="camera_preview" class="mx-auto mt-4 max-h-80 rounded-md" autoplay playsinline hidden></video>
-        <canvas id="camera_canvas" hidden></canvas>
-        <div class="mt-3 flex justify-center gap-3">
-          <button type="button" id="capture_photo" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md" hidden>Ta bilde</button>
-          <button type="button" id="close_camera" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md" hidden>Lukk kamera</button>
-        </div>
-        <div id="camera_photo_preview" class="mt-4 flex flex-wrap justify-center gap-2"></div>
-        <p id="camera_status" class="text-sm font-medium text-gray-600 mt-3">Bildene tas direkte med kameraet.</p>
+        <button type="button" id="open_camera" class="inline-flex items-center justify-center min-h-11 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-black rounded-md font-semibold">
+          Åpne kamera
+        </button>
+        <div id="camera_photo_preview" class="mt-4 flex flex-row flex-nowrap justify-center gap-1 overflow-x-auto" style="max-width: 100%;"></div>
+        <p id="camera_status" class="text-sm font-medium text-gray-600 mt-3">Ta opptil 10 bilder av lagringsobjektet.</p>
       </div>
     </div>
 
@@ -143,6 +139,10 @@
     </div>
 
     <%= f.submit "Fullfør registrering", class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
+
+    <p class="text-sm text-gray-600">
+      Rovde Industripark, org.nr 987988290, e-post: torvik137@gmail.com
+    </p>
   <% end %>
 </div>
 
@@ -150,10 +150,6 @@
   (() => {
     const button = document.getElementById("open_camera");
     const input = document.getElementById("camera_photos");
-    const video = document.getElementById("camera_preview");
-    const canvas = document.getElementById("camera_canvas");
-    const captureButton = document.getElementById("capture_photo");
-    const closeButton = document.getElementById("close_camera");
     const preview = document.getElementById("camera_photo_preview");
     const status = document.getElementById("camera_status");
     const contractText = document.getElementById("contract_text");
@@ -162,70 +158,31 @@
     const businessInvoiceFields = document.getElementById("business_invoice_fields");
     const billingCompanyName = document.getElementById("billing_company_name");
     const billingOrganizationNumber = document.getElementById("billing_organization_number");
-    let stream;
+    if (!button || !input || input.dataset.previewInitialized) return;
+    input.dataset.previewInitialized = "true";
+    let selectedPhotos = [];
 
-    if (!button || button.dataset.cameraInitialized) return;
-    button.dataset.cameraInitialized = "true";
+    button.addEventListener("click", () => input.click());
 
-    const stopCamera = () => {
-      stream?.getTracks().forEach((track) => track.stop());
-      stream = null;
-      video.srcObject = null;
-      video.hidden = true;
-      captureButton.hidden = true;
-      closeButton.hidden = true;
-      button.hidden = false;
-    };
+    input.addEventListener("change", () => {
+      selectedPhotos = [...selectedPhotos, ...Array.from(input.files)].slice(0, 10);
+      const files = new DataTransfer();
+      selectedPhotos.forEach((file) => files.items.add(file));
+      input.files = files.files;
+      preview.replaceChildren();
 
-    const showCamera = (newStream) => {
-      stream = newStream;
-      video.srcObject = stream;
-      video.hidden = false;
-      captureButton.hidden = false;
-      closeButton.hidden = false;
-      button.hidden = true;
-      status.textContent = "Kameraet er klart.";
-    };
-
-    button.addEventListener("click", async () => {
-      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-        status.textContent = "Kamera krever localhost eller HTTPS. Åpne appen på http://localhost:3000 eller bruk HTTPS.";
-        return;
-      }
-
-      try {
-        showCamera(await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }));
-      } catch (error) {
-        try {
-          showCamera(await navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
-        } catch (fallbackError) {
-          status.textContent = fallbackError.name === "NotAllowedError" ? "Kameratilgang ble avslått. Tillat kamera for denne siden i nettleserens innstillinger." : `Kameraet kunne ikke åpnes (${fallbackError.name}).`;
-        }
-      }
-    });
-
-    captureButton.addEventListener("click", () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0);
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-
-        const files = new DataTransfer();
-        Array.from(input.files).forEach((file) => files.items.add(file));
-        const file = new File([blob], `lagringsobjekt-${Date.now()}.jpg`, { type: "image/jpeg" });
-        files.items.add(file);
-        input.files = files.files;
+      selectedPhotos.forEach((file) => {
         const image = document.createElement("img");
         image.src = URL.createObjectURL(file);
-        image.alt = "Forhåndsvisning av lagringsobjekt";
-        image.className = "h-24 w-24 rounded-md object-cover";
+        image.alt = `Forhåndsvisning av ${file.name}`;
+        image.className = "shrink-0 rounded object-cover";
+        image.style.cssText = "width: 24px; height: 24px;";
+        image.addEventListener("load", () => URL.revokeObjectURL(image.src), { once: true });
         preview.appendChild(image);
-        status.textContent = `${input.files.length} bilde(r) klart for lagring.`;
-      }, "image/jpeg", 0.85);
-    });
+      });
 
-    closeButton.addEventListener("click", stopCamera);
+      status.textContent = selectedPhotos.length ? `${selectedPhotos.length} av 10 bilde(r) klart for lagring.` : "Ta opptil 10 bilder av lagringsobjektet.";
+    });
 
     const enableContractApproval = () => {
       if (contractText.scrollHeight - contractText.scrollTop <= contractText.clientHeight + 1) {

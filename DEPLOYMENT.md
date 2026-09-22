@@ -74,22 +74,41 @@ fly open  # Åpne app i browser
 
 ## Etter første deployment
 
+### ⚠️ VIKTIG: Bruk environment variables, ikke credentials-filen
+**Production credentials fungerer ikke korrekt** - Rails leser kun `secret_key_base` fra filen.
+All konfigurasjon må settes som **environment variables** via `fly secrets set`.
+
+### Allerede satt (fungerer):
+```bash
+# Disse er allerede konfigurert:
+RAILS_MASTER_KEY=7ed262a4eed1c87a7a769bae5b47cc62
+TABLET_PASSCODE=6133
+VEGVESENET_API_KEY=245567ae-943a-4dc5-b11c-de3359283549
+```
+
 ### Oppdater API-nøkler når klare
-Når du har fått produksjonsnøkler fra Vipps og Power Office:
+Når du har fått produksjonsnøkler fra Vipps og Power Office, sett dem som environment variables:
 
 ```bash
-# Rediger production credentials
-EDITOR=nano rails credentials:edit --environment production
+# Vipps credentials (produksjon)
+fly secrets set \
+  VIPPS_BASE_URL=https://api.vipps.no \
+  VIPPS_CLIENT_ID=<din_production_client_id> \
+  VIPPS_CLIENT_SECRET=<din_production_client_secret> \
+  VIPPS_SUBSCRIPTION_KEY=<din_production_subscription_key> \
+  VIPPS_MERCHANT_SERIAL_NUMBER=<ditt_production_msn> \
+  --app rovde-lager
 
-# Oppdater følgende felter:
-# - tablet_passcode: "CHANGE_ME_BEFORE_PRODUCTION"
-# - vegvesenet_api: "TODO_SET_PRODUCTION_KEY"
-# - vipps.client_id, client_secret, subscription_key, merchant_serial_number
-# - power_office.client_key, application_key
-
-# Re-deploy etter endringer
-fly deploy
+# Power Office credentials (produksjon)
+fly secrets set \
+  POWER_OFFICE_CLIENT_KEY=<din_client_key> \
+  POWER_OFFICE_APPLICATION_KEY=<din_application_key> \
+  POWER_OFFICE_BASE_URL=https://api.poweroffice.net \
+  --app rovde-lager
 ```
+
+**Merk:** Environment variables oppdateres automatisk, ingen re-deploy nødvendig.
+Appen restarter automatisk når secrets endres.
 
 ### Test betalingsintegrasjoner lokalt først
 1. Sett test-nøkler i development credentials
@@ -101,12 +120,15 @@ fly deploy
 ## Nyttige kommandoer
 
 ```bash
-fly ssh console                    # SSH inn i container
-fly postgres connect -a rovde-lager-db  # Koble til database
-fly logs --app rovde-lager         # Se logger
-fly status --app rovde-lager       # App status
-fly scale count 2                  # Skaler til 2 instances
-fly scale vm shared-cpu-1x --memory 2048  # Oppgrader VM
+fly ssh console                              # SSH inn i container
+fly postgres connect -a rovde-lager-db      # Koble til database
+fly logs --app rovde-lager                   # Se logger
+fly status --app rovde-lager                 # App status
+fly secrets list --app rovde-lager           # Se alle environment variables
+fly secrets set KEY=value --app rovde-lager  # Sett environment variable
+fly secrets unset KEY --app rovde-lager      # Fjern environment variable
+fly scale count 2                            # Skaler til 2 instances
+fly scale vm shared-cpu-1x --memory 2048     # Oppgrader VM
 ```
 
 ## Kostnad estimat (fly.io)
@@ -118,9 +140,10 @@ fly scale vm shared-cpu-1x --memory 2048  # Oppgrader VM
 ## Neste steg før live
 - [ ] Få Vipps production API-nøkler
 - [ ] Få Power Office API-nøkler
-- [ ] Test betalingsintegrasjoner lokalt
-- [ ] Oppdater production credentials
-- [ ] Endre tablet_passcode til sterkt passord
+- [ ] Test betalingsintegrasjoner lokalt med test-nøkler
+- [ ] Sett production API-nøkler som environment variables (se over)
+- [x] ~~Endre tablet_passcode~~ (allerede satt til 6133)
+- [ ] Eventuelt: bytt tablet passcode til noe mer sikkert
 - [ ] Eventuelt: sett opp custom domain
 - [ ] Eventuelt: sett opp monitoring/alerts
 - [ ] Eventuelt: sett opp backup-strategi for database

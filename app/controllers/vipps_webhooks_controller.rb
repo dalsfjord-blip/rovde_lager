@@ -19,8 +19,6 @@ class VippsWebhooksController < ApplicationController
         case state
         when "AUTHORIZED"
           agreement.update!(payment_status: "paid")
-          # Send e-post når betaling er bekreftet
-          send_confirmation_email(agreement)
         when "TERMINATED", "ABORTED", "EXPIRED"
           agreement.update!(payment_status: "failed")
         end
@@ -31,13 +29,5 @@ class VippsWebhooksController < ApplicationController
   rescue StandardError => e
     Rails.logger.error("Vipps Webhook Error: #{e.message}")
     head :internal_server_error
-  end
-
-  private
-
-  def send_confirmation_email(agreement)
-    if agreement.send_email_copy && agreement.customer_email.present?
-      RentalAgreementMailer.confirmation_email(agreement).deliver_later
-    end
   end
 end

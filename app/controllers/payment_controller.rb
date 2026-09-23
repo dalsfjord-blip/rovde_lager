@@ -11,7 +11,6 @@ class PaymentController < ApplicationController
       if Rails.env.development? || Rails.env.test?
         # Simulert betaling for lokal testing
         @agreement.update!(payment_method: "vipps", payment_status: "paid")
-        send_confirmation_email
         redirect_to receipt_path, notice: "Betaling fullført (simulert)!"
       else
         # Ekte Vipps-integrasjon
@@ -19,7 +18,6 @@ class PaymentController < ApplicationController
       end
     when "invoice"
       @agreement.update!(payment_method: "invoice", payment_status: "pending")
-      send_confirmation_email
       redirect_to receipt_path, notice: "Faktura opprettet!"
     else
       redirect_to payment_path, alert: "Vennligst velg betalingsmetode"
@@ -71,11 +69,5 @@ class PaymentController < ApplicationController
   def load_agreement
     @agreement = current_agreement
     redirect_to storage_items_path, alert: "Registrer minst ett lagringsobjekt først." unless @agreement
-  end
-
-  def send_confirmation_email
-    if @agreement.send_email_copy && @agreement.customer_email.present?
-      RentalAgreementMailer.confirmation_email(@agreement).deliver_later
-    end
   end
 end

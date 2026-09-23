@@ -16,6 +16,7 @@ class StorageItemsController < ApplicationController
 
     if @agreement.save
       CreatePowerOfficeInvoiceJob.perform_later(@agreement.id) if @agreement.invoice?
+      send_confirmation_email
       store_current_agreement(@agreement)
       redirect_to receipt_path, notice: payment_notice
     else
@@ -78,5 +79,11 @@ class StorageItemsController < ApplicationController
       { id: "2026-04-30", label: "30. april" },
       { id: "2026-03-19", label: "19. mars kl. 18:00" }
     ]
+  end
+
+  def send_confirmation_email
+    if @agreement.send_email_copy && @agreement.customer_email.present?
+      RentalAgreementMailer.confirmation_email(@agreement).deliver_later
+    end
   end
 end

@@ -1,0 +1,49 @@
+Bekreftelse på lagerregistrering
+=====================================
+
+Hei <%= @agreement.customer_name %>,
+
+Takk for din registrering hos Rovde Lager. Dette er en bekreftelse på at vi har mottatt din bestilling.
+
+REFERANSENUMMER: <%= @agreement.reference_number %>
+DATO: <%= l(Date.today, format: :long) %>
+
+KUNDEINFORMASJON
+----------------
+Navn:     <%= @agreement.customer_name %>
+Telefon:  <%= @agreement.customer_phone %>
+E-post:   <%= @agreement.customer_email %>
+
+LAGRINGSOBJEKTER
+----------------
+<% @items.each do |item| %>
+- <%= item.registration_number || "-" %> | <%= item.description || "-" %> | <%= item.meters %> meter
+<% end %>
+
+Total meter: <%= @agreement.total_meters %>
+Total pris:  <%= number_to_currency(@agreement.total_price || 0) %>
+
+BETALINGSINFORMASJON
+--------------------
+Betalingsmetode: <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %>
+<% if @agreement.invoice? %>
+Fakturamottaker:  <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)
+Fakturastatus:    Faktura behandles
+<% else %>
+Status:           <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+<% end %>
+
+<% if @agreement.pickup_date %>
+HENTEDATO
+---------
+Dato: <%= l(@agreement.pickup_date, format: :long) %>
+<% if @agreement.special_needs %>
+⚠️  Spesiell tilgjengelighet: <%= @agreement.special_needs_notes %>
+<% end %>
+<% end %>
+
+Med vennlig hilsen,
+Rovde Lager
+
+---
+Denne e-posten er sendt automatisk. Hvis du har spørsmål, vennligst kontakt oss.

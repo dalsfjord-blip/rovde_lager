@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #2563eb;
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #1f2937;
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th {
+      background-color: #f3f4f6;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .info-box {
+      background-color: #f9fafb;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    .total {
+      text-align: right;
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      color: #6b7280;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bekreftelse på lagerregistrering</h1>
+  
+  <p>Hei <%= @agreement.customer_name %>,</p>
+  
+  <p>Takk for din registrering hos Rovde Lager. Dette er en bekreftelse på at vi har mottatt din bestilling.</p>
+  
+  <div class="info-box">
+    <strong>Referansenummer:</strong> <%= @agreement.reference_number %><br>
+    <strong>Dato:</strong> <%= l(Date.today, format: :long) %>
+  </div>
+  
+  <h2>Kundeinformasjon</h2>
+  <div class="info-box">
+    <strong>Navn:</strong> <%= @agreement.customer_name %><br>
+    <strong>Telefon:</strong> <%= @agreement.customer_phone %><br>
+    <strong>E-post:</strong> <%= @agreement.customer_email %>
+  </div>
+  
+  <h2>Lagringsobjekter</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Reg.nr.</th>
+        <th>Beskrivelse</th>
+        <th style="text-align: right;">Meter</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr>
+          <td><%= item.registration_number || "-" %></td>
+          <td><%= item.description || "-" %></td>
+          <td style="text-align: right;"><%= item.meters %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  
+  <div class="total">
+    Total meter: <%= @agreement.total_meters %><br>
+    Total pris: <%= number_to_currency(@agreement.total_price || 0) %>
+  </div>
+  
+  <h2>Betalingsinformasjon</h2>
+  <div class="info-box">
+    <strong>Betalingsmetode:</strong> <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %><br>
+    <% if @agreement.invoice? %>
+      <strong>Fakturamottaker:</strong> <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)<br>
+      <strong>Fakturastatus:</strong> Faktura behandles
+    <% else %>
+      <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+    <% end %>
+  </div>
+  
+  <% if @agreement.pickup_date %>
+    <h2>Hentedato</h2>
+    <div class="info-box">
+      <strong>Dato:</strong> <%= l(@agreement.pickup_date, format: :long) %><br>
+      <% if @agreement.special_needs %>
+        ⚠️ <strong>Spesiell tilgjengelighet:</strong> <%= @agreement.special_needs_notes %>
+      <% end %>
+    </div>
+  <% end %>
+  
+  <div class="footer">
+    <p>Med vennlig hilsen,<br>
+    <strong>Rovde Lager</strong></p>
+    
+    <p>Denne e-posten er sendt automatisk. Hvis du har spørsmål, vennligst kontakt oss.</p>
+  </div>
+</body>
+</html>

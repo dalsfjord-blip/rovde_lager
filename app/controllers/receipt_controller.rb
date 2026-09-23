@@ -5,7 +5,15 @@ class ReceiptController < ApplicationController
   end
 
   def email
-    redirect_to receipt_path, alert: "E-postsending er ikke konfigurert ennå."
+    if @agreement.customer_email.present?
+      RentalAgreementMailer.confirmation_email(@agreement).deliver_later
+      redirect_to receipt_path, notice: "E-post sendt til #{@agreement.customer_email}"
+    else
+      redirect_to receipt_path, alert: "Ingen e-postadresse registrert."
+    end
+  rescue StandardError => e
+    Rails.logger.error "E-post feilet: #{e.message}"
+    redirect_to receipt_path, alert: "E-post kunne ikke sendes. Prøv igjen senere."
   end
 
   private

@@ -42,6 +42,12 @@
       border-radius: 5px;
       margin: 15px 0;
     }
+    .contract-box {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+    }
     .total {
       text-align: right;
       font-size: 1.2em;
@@ -55,6 +61,13 @@
       color: #6b7280;
       font-size: 0.9em;
     }
+    .disclaimer {
+      background-color: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -62,7 +75,7 @@
   
   <p>Hei <%= @agreement.customer_name %>,</p>
   
-  <p>Takk for din registrering hos Rovde Lager. Dette er en bekreftelse på at vi har mottatt din bestilling.</p>
+  <p>Takk for din registrering hos Rovde Industripark. Dette er en bekreftelse på at vi har mottatt din bestilling.</p>
   
   <div class="info-box">
     <strong>Referansenummer:</strong> <%= @agreement.reference_number %><br>
@@ -103,13 +116,13 @@
   
   <h2>Betalingsinformasjon</h2>
   <div class="info-box">
-    <strong>Betalingsmetode:</strong> <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %><br>
-    <% if @agreement.invoice? %>
-      <strong>Fakturamottaker:</strong> <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)<br>
-      <strong>Fakturastatus:</strong> Faktura behandles
-    <% else %>
-      <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
-    <% end %>
+    <strong>Betalingsmetode:</strong> Vipps<br>
+    <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+  </div>
+  
+  <div class="disclaimer">
+    <strong>ℹ️ Kvittering for betaling:</strong><br>
+    Betalingskvittering fra Vipps mottar du i Vipps-appen. Denne e-posten er kun en bekreftelse på lagerregistreringen.
   </div>
   
   <% if @agreement.pickup_date %>
@@ -122,11 +135,21 @@
     </div>
   <% end %>
   
+  <h2>Leiekontrakt</h2>
+  <div class="contract-box">
+    <h3 style="margin-top: 0;">Vilkår for lagring</h3>
+    <p>Dette er en standard leiekontrakt for sesonglagring av kjøretøy og båter. Alle objekter lagres på eget ansvar.</p>
+    <p>Lagringsperioden er fra innlevering til avtalt hentedato. Betaling skjer via Vipps eller faktura.</p>
+    <p>Ved spørsmål, kontakt lagringsansvarlig.</p>
+  </div>
+  
   <div class="footer">
-    <p>Med vennlig hilsen,<br>
-    <strong>Rovde Lager</strong></p>
+    <p><strong>Rovde Industripark</strong><br>
+    Org.nr: 987988290<br>
+    E-post: torvik137@gmail.com</p>
     
-    <p>Denne e-posten er sendt automatisk. Hvis du har spørsmål, vennligst kontakt oss.</p>
+    <p style="color: #ef4444; font-weight: 600;">⚠️ Ikke svar på denne e-posten. Denne e-postadressen mottar ikke svar.</p>
+    <p>Ved spørsmål, kontakt oss på torvik137@gmail.com</p>
   </div>
 </body>
 </html>

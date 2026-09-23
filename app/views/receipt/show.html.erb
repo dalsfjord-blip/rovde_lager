@@ -58,16 +58,15 @@
 
     <div class="mb-6">
       <h3 class="text-lg font-semibold mb-2 text-gray-700">Betalingsinformasjon</h3>
-      <p class="text-gray-600">Betalingsmetode: <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %></p>
-      <% if @agreement.invoice? %>
-        <p class="text-gray-600">Fakturamottaker: <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)</p>
-        <p class="text-gray-600">Fakturastatus: <span class="text-yellow-600">Faktura behandles</span></p>
-      <% else %>
-        <p class="text-gray-600">Status:
-          <span class="<%= @agreement.payment_status == 'paid' ? 'text-green-600 font-medium' : 'text-yellow-600' %>">
-            <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
-          </span>
-        </p>
+      <p class="text-gray-600">Betalingsmetode: Vipps</p>
+      <p class="text-gray-600">Status:
+        <span class="<%= @agreement.payment_status == 'paid' ? 'text-green-600 font-medium' : 'text-yellow-600' %>">
+          <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+        </span>
+      </p>
+      <p class="text-sm text-blue-600 mt-2">ℹ️ Betalingskvittering mottar du i Vipps-appen</p>
+      <% if @agreement.send_email_copy && @agreement.customer_email.present? %>
+        <p class="text-sm text-green-600 mt-2">✉️ Avtalen er sendt til <%= @agreement.customer_email %></p>
       <% end %>
     </div>
 
@@ -84,11 +83,5 @@
   <div class="flex justify-center gap-4">
     <%= link_to "Start ny registrering", storage_items_path(new: true),
           class: "bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md font-medium" %>
-
-    <% if @agreement.send_email_copy && @agreement.customer_email.present? %>
-      <%= button_to "Send kontrakt på e-post", email_receipt_path(@agreement), 
-            method: :post,
-            class: "bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md font-medium" %>
-    <% end %>
   </div>
 </div>

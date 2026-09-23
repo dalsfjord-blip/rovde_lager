@@ -3,7 +3,7 @@ Bekreftelse på lagerregistrering
 
 Hei <%= @agreement.customer_name %>,
 
-Takk for din registrering hos Rovde Lager. Dette er en bekreftelse på at vi har mottatt din bestilling.
+Takk for din registrering hos Rovde Industripark. Dette er en bekreftelse på at vi har mottatt din bestilling.
 
 REFERANSENUMMER: <%= @agreement.reference_number %>
 DATO: <%= l(Date.today, format: :long) %>
@@ -25,13 +25,11 @@ Total pris:  <%= number_to_currency(@agreement.total_price || 0) %>
 
 BETALINGSINFORMASJON
 --------------------
-Betalingsmetode: <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %>
-<% if @agreement.invoice? %>
-Fakturamottaker:  <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)
-Fakturastatus:    Faktura behandles
-<% else %>
-Status:           <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
-<% end %>
+Betalingsmetode: Vipps
+Status:          <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+
+⚠️ KVITTERING FOR BETALING
+Betalingskvittering fra Vipps mottar du i Vipps-appen. Denne e-posten er kun en bekreftelse på lagerregistreringen.
 
 <% if @agreement.pickup_date %>
 HENTEDATO
@@ -42,8 +40,23 @@ Dato: <%= l(@agreement.pickup_date, format: :long) %>
 <% end %>
 <% end %>
 
-Med vennlig hilsen,
-Rovde Lager
+LEIEKONTRAKT
+------------
+Vilkår for lagring
+
+Dette er en standard leiekontrakt for sesonglagring av kjøretøy og båter. 
+Alle objekter lagres på eget ansvar.
+
+Lagringsperioden er fra innlevering til avtalt hentedato. 
+Betaling skjer via Vipps eller faktura.
+
+Ved spørsmål, kontakt lagringsansvarlig.
 
 ---
-Denne e-posten er sendt automatisk. Hvis du har spørsmål, vennligst kontakt oss.
+
+Rovde Industripark
+Org.nr: 987988290
+E-post: torvik137@gmail.com
+
+⚠️ IKKE SVAR PÅ DENNE E-POSTEN
+Denne e-postadressen mottar ikke svar. Ved spørsmål, kontakt oss på torvik137@gmail.com

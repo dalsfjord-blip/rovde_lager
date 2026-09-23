@@ -6,21 +6,18 @@ class PaymentController < ApplicationController
   end
 
   def create
-    case params[:payment_method]
-    when "vipps"
+    if params[:payment_method] == "vipps"
       if Rails.env.development? || Rails.env.test?
-        # Simulert betaling for lokal testing dersom du ikke vil kalle Vipps API
+        # Simulert betaling for lokal testing
         @agreement.update!(payment_method: "vipps", payment_status: "paid")
+        send_confirmation_email
         redirect_to receipt_path, notice: "Betaling fullført (simulert)!"
       else
-        # Ekte Vipps-integrasjon (Kalles når du er i produksjon)
+        # Ekte Vipps-integrasjon
         start_vipps_payment
       end
-    when "invoice"
-      @agreement.update!(payment_method: "invoice", payment_status: "pending")
-      redirect_to receipt_path, notice: "Faktura opprettet!"
     else
-      redirect_to payment_path, alert: "Vennligst velg betalingsmetode"
+      redirect_to payment_path, alert: "Ugyldig betalingsmetode"
     end
   end
 
@@ -69,5 +66,11 @@ class PaymentController < ApplicationController
   def load_agreement
     @agreement = current_agreement
     redirect_to storage_items_path, alert: "Registrer minst ett lagringsobjekt først." unless @agreement
+  end
+
+  def send_confirmation_email
+    if @agreement.send_email_copy && @agreement.customer_email.present?
+      RentalAgreementMailer.confirmation_email(@agreement).deliver_later
+    end
   end
 end

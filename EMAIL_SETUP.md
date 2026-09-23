@@ -27,13 +27,13 @@ E-post-funksjonaliteten er nå implementert med Resend som SMTP-leverandør. Kun
 ```bash
 fly secrets set \
   RESEND_API_KEY=<din_resend_api_key> \
-  SMTP_FROM_EMAIL=noreply@rovdelager.no \
+  SMTP_FROM_EMAIL=avtale@rovdeindustripark.no \
   --app rovde-lager
 ```
 
 ### 2. Verifiser domene i Resend
 - Logg inn på https://resend.com
-- Legg til ditt domene (f.eks. rovdelager.no)
+- Legg til ditt domene (f.eks. rovdeindustripark.no)
 - Følg instruksjonene for å legge til DNS-poster (SPF, DKIM, DMARC)
 - Vent på verifisering (kan ta opptil 48 timer)
 
@@ -50,16 +50,32 @@ E-post åpnes automatisk i nettleseren når du kjører lokalt:
 
 1. Start serveren: `bin/rails server`
 2. Fullfør en registrering med e-postadresse
-3. Klikk "Send kontrakt på e-post"
-4. E-posten åpnes automatisk i nettleseren
+3. Huk av for "Send kopi av kontrakt på e-post"
+4. Velg betalingsmetode og fullfør
+5. E-posten åpnes automatisk i nettleseren
 
 ## Hvordan det fungerer
 
+**Privatkunder:**
+
 1. Kunde fyller inn e-postadresse i skjemaet
-2. Huker av for "Send e-postkopi"
-3. På kvitteringssiden klikker på "Send kontrakt på e-post"
-4. E-post sendes asynkront via Solid Queue
-5. Kunde mottar bekreftelses-e-post
+2. Huker av for "Send kopi av kontrakt på e-post" (standard på)
+3. Velger betalingsmetode (Vipps eller Faktura)
+4. Ved Vipps: E-post sendes automatisk når betaling er bekreftet via webhook
+5. Ved Faktura: E-post sendes umiddelbart når faktura opprettes
+6. Kunde mottar bekreftelses-e-post automatisk
+
+**E-posten inneholder:**
+- Referansenummer og dato
+- Kundeinformasjon
+- Liste over lagringsobjekter med total pris
+- Betalingsinformasjon
+- Hentedato og spesielle behov
+- Fullstendig leiekontrakt
+- Disclaimer om at Vipps-kvittering kommer separat
+- Disclaimer om at e-posten ikke kan besvares
+
+**Fra-adresse:** avtale@rovdeindustripark.no
 
 ## Feilhåndtering
 
@@ -120,3 +136,26 @@ bin/rails test test/mailers/rental_agreement_mailer_test.rb
 1. Sjekk at letter_opener er installert: `bundle list letter_opener`
 2. Sjekk development.rb konfigurasjon
 3. Restart Rails-server
+
+
+## arbeidsflyt
+
+**Privatkunder:**
+
+Utsendelse av avtalen skal være automatisert. Den skal inneholde:
+- Lagringsobjekt(er)
+- Tidspunkt for uthenting
+- Leiekontrakten (tekst)
+
+Kvittering for betaling kommer fra Vipps-app (eksternt) - dette står i e-posten skriftelig.
+
+Vi skal ikke åpne noe e-post-klient under registrering - alt skal være automatisk.
+
+Kunden skal bare ha tilsendt avtalen hvis "send avtalen på e-post" er huket av i kontrakten.
+
+Sendes ut via Resend fra "avtale@rovdeindustripark.no"
+
+E-posten kan ikke besvares (noreply-disclaimer er inkludert).
+
+**Bedriftskunder:**
+Her kommer vi tilbake med en løsning.

@@ -1,25 +1,21 @@
 class CreatePowerOfficeInvoiceJob < ApplicationJob
   retry_on Faraday::ConnectionFailed, Faraday::TimeoutError, wait: :polynomially_longer, attempts: 3
 
-  def perform(rental_agreement_id)
+  def perform(rental_agreement_id, client: PowerOfficeClient.new)
     agreement = RentalAgreement.find(rental_agreement_id)
+    return if agreement.power_office_invoice_id.present?
 
-    agreement.with_lock do
-      return if agreement.power_office_invoice_id.present?
+    agreement.update!(invoice_sync_status: "processing", invoice_sync_error: nil)
 
-      agreement.update!(invoice_sync_status: "processing", invoice_sync_error: nil)
-      client = PowerOfficeClient.new
-
-      create_customer(agreement, client) unless agreement.power_office_customer_id.present?
-      create_sales_order(agreement, client) unless agreement.power_office_sales_order_id.present?
-      create_invoice(agreement, client)
-    end
+    create_customer(agreement, client) unless agreement.power_office_customer_id.present?
+    create_sales_order(agreement, client) unless agreement.power_office_sales_order_id.present?
+    create_invoice(agreement, client)
   rescue PowerOfficeClient::RequestError => error
     raise Faraday::ConnectionFailed, error.message if error.retryable
 
-    mark_failed(rental_agreement_id, "Kunne ikke opprette faktura")
-  rescue PowerOfficeClient::ConfigurationError
-    mark_failed(rental_agreement_id, "Fakturering er ikke konfigurert")
+    mark_failed(rental_agreement_id, error)
+  rescue PowerOfficeClient::ConfigurationError => error
+    mark_failed(rental_agreement_id, error)
   rescue ActiveRecord::RecordNotFound
     nil
   end
@@ -59,7 +55,8 @@ class CreatePowerOfficeInvoiceJob < ApplicationJob
     response["Id"] || response["id"] || response.fetch("InvoiceId", response["invoiceId"])
   end
 
-  def mark_failed(rental_agreement_id, message)
-    RentalAgreement.find_by(id: rental_agreement_id)&.update(invoice_sync_status: "failed", invoice_sync_error: message)
+  def mark_failed(rental_agreement_id, error)
+    message = error.is_a?(PowerOfficeClient::RequestError) ? "PowerOffice #{error.status}: #{error.detail}" : error.message
+    RentalAgreement.find_by(id: rental_agreement_id)&.update(invoice_sync_status: "failed", invoice_sync_error: message.truncate(500))
   end
 end

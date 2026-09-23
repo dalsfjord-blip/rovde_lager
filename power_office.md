@@ -206,7 +206,9 @@ Eksisterende `reference_number` brukes som intern sporingsreferanse. Den skal la
 - Fakturaskjemaet har søk/autofullfør for bedriftsnavn, direkte oppslag på organisasjonsnummer og obligatorisk faktura-e-post.
 - `RentalAgreement` lagrer faktura-e-post, MVA-beløp og totalpris inkludert MVA. Totalpris i registreringen behandles som bruttopris; PowerOffice-ordre bruker netto pris (`bruttobeløp / 1.25`).
 - `PowerOfficeClient` henter og cacher OAuth-token, oppretter kunde, salgsordre med én linje og `VatCode: "3"`, og fakturerer salgsordren.
-- `CreatePowerOfficeInvoiceJob` låser avtalen, lagrer PowerOffice-ID-er underveis, unngår allerede fakturerte avtaler, setter synkroniseringsstatus og prøver nettverksfeil på nytt opptil tre ganger.
+- `CreatePowerOfficeInvoiceJob` lagrer hvert vellykkede PowerOffice-resultat før neste API-kall, unngår allerede fakturerte avtaler, setter synkroniseringsstatus og prøver nettverksfeil på nytt opptil tre ganger.
+- Første manuelle demoforsøk opprettet kunde med PowerOffice-ID `28088156`, men feilet før salgsordre og faktura. Den tidligere transaksjonen rullet tilbake lokal lagring av kunde-ID-en. Dette er rettet: kunde-ID og senere ordre-ID blir nå varig lagret etter hvert vellykkede kall, slik at en ny kjøring fortsetter fra neste steg og ikke oppretter duplikatkunde.
+- Ved en ikke-retrybar PowerOffice-feil lagres nå HTTP-status og avkortet respons i `invoice_sync_error`, for eksempel `PowerOffice 400: ...`. Bruk denne teksten ved videre feilsøking av salgsordre- eller fakturaendepunktet.
 - Kvitteringen viser planlagt, behandles, sendt med fakturanummer eller feilet. Bekreftelses-e-posten sendes fortsatt ved fullført registrering.
 - Automatiske tester dekker Brreg-responser/feil, PowerOffice OAuth og API-flyt, e-post og registreringsflyten. `bin/rails test`, `bin/rails zeitwerk:check` og `bundle exec brakeman --no-pager` bestod ved implementeringstidspunktet.
 

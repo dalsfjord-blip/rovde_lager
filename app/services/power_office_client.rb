@@ -1,11 +1,12 @@
 class PowerOfficeClient
   class ConfigurationError < StandardError; end
   class RequestError < StandardError
-    attr_reader :status, :retryable
+    attr_reader :status, :retryable, :detail
 
-    def initialize(status:, retryable:)
+    def initialize(status:, retryable:, detail: nil)
       @status = status
       @retryable = retryable
+      @detail = detail
       super("PowerOffice request failed with status #{status}")
     end
   end
@@ -87,9 +88,13 @@ class PowerOfficeClient
     return JSON.parse(response.body) if response.success? && response.body.present?
     return {} if response.success?
 
-    raise RequestError.new(status: response.status, retryable: response.status >= 500 || response.status == 429)
+    raise RequestError.new(
+      status: response.status,
+      retryable: response.status >= 500 || response.status == 429,
+      detail: response.body.to_s.truncate(500)
+    )
   rescue JSON::ParserError
-    raise RequestError.new(status: response.status, retryable: false)
+    raise RequestError.new(status: response.status, retryable: false, detail: response.body.to_s.truncate(500))
   end
 
   def connection

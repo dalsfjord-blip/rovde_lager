@@ -117,7 +117,8 @@
         <p class="text-sm text-gray-600">Faktura er kun tilgjengelig for bedrifter. Opplysningene brukes til fakturering gjennom PowerOffice.</p>
         <div>
           <%= f.label :billing_company_name, "Bedriftsnavn *", class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= f.text_field :billing_company_name, id: "billing_company_name", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
+          <%= f.text_field :billing_company_name, id: "billing_company_name", autocomplete: "organization", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
+          <div id="brreg_results" class="mt-1 space-y-1"></div>
           <% if @agreement.errors[:billing_company_name].any? %>
             <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:billing_company_name].first %></p>
           <% end %>
@@ -129,13 +130,22 @@
             <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:billing_organization_number].first %></p>
           <% end %>
         </div>
+        <div>
+          <%= f.label :billing_email, "Faktura-e-post *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.email_field :billing_email, id: "billing_email", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
+          <% if @agreement.errors[:billing_email].any? %>
+            <p class="text-red-500 text-xs mt-1"><%= @agreement.errors[:billing_email].first %></p>
+          <% end %>
+        </div>
       </div>
     </div>
 
     <div class="bg-gray-50 p-4 md:p-6 rounded-lg">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Sammendrag</h2>
       <p class="text-gray-700">Total meter: <strong id="total_meters"><%= @agreement.total_meters || 0 %></strong></p>
-      <p class="text-gray-700">Total pris: <strong id="total_price"><%= number_to_currency(@agreement.total_price || 0) %></strong></p>
+      <p class="text-gray-700">Pris ekskl. MVA: <strong><%= number_to_currency(@agreement.net_price) %></strong></p>
+      <p class="text-gray-700">MVA (25 %): <strong><%= number_to_currency(@agreement.vat_amount || 0) %></strong></p>
+      <p class="text-gray-700">Pris inkl. MVA: <strong id="total_price"><%= number_to_currency(@agreement.total_price_with_vat || @agreement.total_price || 0) %></strong></p>
     </div>
 
     <%= f.submit "Fullfør registrering", class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
@@ -158,6 +168,8 @@
     const businessInvoiceFields = document.getElementById("business_invoice_fields");
     const billingCompanyName = document.getElementById("billing_company_name");
     const billingOrganizationNumber = document.getElementById("billing_organization_number");
+    const billingEmail = document.getElementById("billing_email");
+    const brregResults = document.getElementById("brreg_results");
     if (!button || !input || input.dataset.previewInitialized) return;
     input.dataset.previewInitialized = "true";
     let selectedPhotos = [];
@@ -198,12 +210,56 @@
       businessInvoiceFields.hidden = !invoiceSelected;
       billingCompanyName.required = invoiceSelected;
       billingOrganizationNumber.required = invoiceSelected;
+      billingEmail.required = invoiceSelected;
 
       if (!invoiceSelected) {
         billingCompanyName.value = "";
         billingOrganizationNumber.value = "";
+        billingEmail.value = "";
+        brregResults.replaceChildren();
       }
     };
+
+    const chooseCompany = (company) => {
+      billingCompanyName.value = company.name;
+      billingOrganizationNumber.value = company.organization_number;
+      brregResults.replaceChildren();
+    };
+
+    let searchTimeout;
+    billingCompanyName.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        const name = billingCompanyName.value.trim();
+        if (name.length < 2) return brregResults.replaceChildren();
+        try {
+          const response = await fetch(`/api/brreg_lookups?name=${encodeURIComponent(name)}`);
+          const companies = await response.json();
+          brregResults.replaceChildren(...companies.map((company) => {
+            const result = document.createElement("button");
+            result.type = "button";
+            result.className = "block w-full rounded border border-gray-200 px-3 py-2 text-left text-sm hover:bg-gray-50";
+            result.textContent = `${company.name} (${company.organization_number})`;
+            result.addEventListener("click", () => chooseCompany(company));
+            return result;
+          }));
+        } catch (_) {
+          brregResults.replaceChildren();
+        }
+      }, 300);
+    });
+
+    billingOrganizationNumber.addEventListener("blur", async () => {
+      const organizationNumber = billingOrganizationNumber.value.replace(/\D/g, "");
+      if (organizationNumber.length !== 9) return;
+      try {
+        const response = await fetch(`/api/brreg_lookups/${organizationNumber}`);
+        if (!response.ok) return;
+        const company = await response.json();
+        if (!billingCompanyName.value.trim()) billingCompanyName.value = company.name;
+      } catch (_) {
+      }
+    });
 
     document.querySelectorAll("[data-payment-method]").forEach((button) => {
       button.addEventListener("click", () => setPaymentMethod(button.dataset.paymentMethod));

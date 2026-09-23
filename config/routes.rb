@@ -5,6 +5,8 @@ Rails.application.routes.draw do
   # API for vehicle lookup
   namespace :api do
     get "vehicle_lookup", to: "vehicle_lookups#show"
+    get "brreg_lookups", to: "brreg_lookups#index"
+    get "brreg_lookups/:organization_number", to: "brreg_lookups#show"
   end
 
   # Authentication

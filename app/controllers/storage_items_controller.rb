@@ -53,6 +53,7 @@ class StorageItemsController < ApplicationController
       :payment_method,
       :billing_company_name,
       :billing_organization_number,
+      :billing_email,
       photos: [],
       storage_items_attributes: [:id, :registration_number, :description, :meters, :_destroy]
     )
@@ -60,8 +61,11 @@ class StorageItemsController < ApplicationController
 
   def calculate_totals
     total_meters = @agreement.storage_items.reject(&:marked_for_destruction?).sum { |item| item.meters || 0 }
+    total_price = total_meters * 700
     @agreement.total_meters = total_meters
-    @agreement.total_price = total_meters * 700
+    @agreement.total_price = total_price
+    @agreement.total_price_with_vat = total_price
+    @agreement.vat_amount = total_price - (total_price / (1 + RentalAgreement::VAT_RATE))
   end
 
   def set_payment_status

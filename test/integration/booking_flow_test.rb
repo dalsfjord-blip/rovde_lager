@@ -24,6 +24,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "button[data-payment-method='invoice']", "Faktura for bedrift"
     assert_select "input[name='rental_agreement[billing_company_name]']", 1
     assert_select "input[name='rental_agreement[billing_organization_number]']", 1
+    assert_select "input[name='rental_agreement[billing_email]']", 1
 
     assert_enqueued_with(job: CreatePowerOfficeInvoiceJob) do
       post storage_items_path, params: registration_params
@@ -40,6 +41,9 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_equal "pending", agreement.payment_status
     assert_equal "Rovde AS", agreement.billing_company_name
     assert_equal "123456789", agreement.billing_organization_number
+    assert_equal "faktura@rovde.example", agreement.billing_email
+    assert_equal 630, agreement.vat_amount.to_f
+    assert_equal 3150, agreement.total_price_with_vat.to_f
     assert_equal "queued", agreement.invoice_sync_status
 
     get receipt_path
@@ -111,6 +115,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
         payment_method: payment_method,
         billing_company_name: billing_company_name,
         billing_organization_number: billing_organization_number,
+        billing_email: "faktura@rovde.example",
         contract_approved: "1",
         send_email_copy: "1",
         photos: photos,

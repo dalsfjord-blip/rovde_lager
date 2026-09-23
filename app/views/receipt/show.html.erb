@@ -61,7 +61,18 @@
       <p class="text-gray-600">Betalingsmetode: <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %></p>
       <% if @agreement.invoice? %>
         <p class="text-gray-600">Fakturamottaker: <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)</p>
-        <p class="text-gray-600">Fakturastatus: <span class="text-yellow-600">Faktura behandles</span></p>
+        <p class="text-gray-600">Faktura-e-post: <%= @agreement.billing_email %></p>
+        <p class="text-gray-600">Fakturastatus:
+          <% if @agreement.invoice_sync_status == "sent" %>
+            <span class="text-green-600">Sendt<%= " (#{@agreement.power_office_invoice_number})" if @agreement.power_office_invoice_number.present? %></span>
+          <% elsif @agreement.invoice_sync_status == "failed" %>
+            <span class="text-red-600">Kunne ikke opprettes</span>
+          <% elsif @agreement.invoice_sync_status == "processing" %>
+            <span class="text-blue-600">Behandles</span>
+          <% else %>
+            <span class="text-yellow-600">Planlagt</span>
+          <% end %>
+        </p>
       <% else %>
         <p class="text-gray-600">Status:
           <span class="<%= @agreement.payment_status == 'paid' ? 'text-green-600 font-medium' : 'text-yellow-600' %>">

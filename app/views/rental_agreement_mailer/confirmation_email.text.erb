@@ -25,11 +25,18 @@ Total pris:  <%= number_to_currency(@agreement.total_price || 0) %>
 
 BETALINGSINFORMASJON
 --------------------
-Betalingsmetode: Vipps
-Status:          <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+Betalingsmetode: <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %>
+<% if @agreement.invoice? %>
+Fakturamottaker:  <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)
+Fakturastatus:    Faktura behandles
+<% else %>
+Status:           <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+<% end %>
 
+<% if @agreement.payment_method == "vipps" %>
 ⚠️ KVITTERING FOR BETALING
 Betalingskvittering fra Vipps mottar du i Vipps-appen. Denne e-posten er kun en bekreftelse på lagerregistreringen.
+<% end %>
 
 <% if @agreement.pickup_date %>
 HENTEDATO

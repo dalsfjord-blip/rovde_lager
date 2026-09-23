@@ -6,7 +6,8 @@ class PaymentController < ApplicationController
   end
 
   def create
-    if params[:payment_method] == "vipps"
+    case params[:payment_method]
+    when "vipps"
       if Rails.env.development? || Rails.env.test?
         # Simulert betaling for lokal testing
         @agreement.update!(payment_method: "vipps", payment_status: "paid")
@@ -16,8 +17,12 @@ class PaymentController < ApplicationController
         # Ekte Vipps-integrasjon
         start_vipps_payment
       end
+    when "invoice"
+      @agreement.update!(payment_method: "invoice", payment_status: "pending")
+      send_confirmation_email
+      redirect_to receipt_path, notice: "Faktura opprettet!"
     else
-      redirect_to payment_path, alert: "Ugyldig betalingsmetode"
+      redirect_to payment_path, alert: "Vennligst velg betalingsmetode"
     end
   end
 

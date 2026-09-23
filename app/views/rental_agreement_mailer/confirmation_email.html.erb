@@ -116,14 +116,21 @@
   
   <h2>Betalingsinformasjon</h2>
   <div class="info-box">
-    <strong>Betalingsmetode:</strong> Vipps<br>
-    <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+    <strong>Betalingsmetode:</strong> <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %><br>
+    <% if @agreement.invoice? %>
+      <strong>Fakturamottaker:</strong> <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)<br>
+      <strong>Fakturastatus:</strong> Faktura behandles
+    <% else %>
+      <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+    <% end %>
   </div>
   
-  <div class="disclaimer">
-    <strong>ℹ️ Kvittering for betaling:</strong><br>
-    Betalingskvittering fra Vipps mottar du i Vipps-appen. Denne e-posten er kun en bekreftelse på lagerregistreringen.
-  </div>
+  <% if @agreement.payment_method == "vipps" %>
+    <div class="disclaimer">
+      <strong>ℹ️ Kvittering for betaling:</strong><br>
+      Betalingskvittering fra Vipps mottar du i Vipps-appen. Denne e-posten er kun en bekreftelse på lagerregistreringen.
+    </div>
+  <% end %>
   
   <% if @agreement.pickup_date %>
     <h2>Hentedato</h2>

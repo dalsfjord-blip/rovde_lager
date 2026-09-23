@@ -5,32 +5,41 @@
   </div>
 
   <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Betaling</h2>
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Betalingsalternativer</h2>
     
     <div class="space-y-4">
       <%= form_with url: payment_path, method: :post, class: "space-y-4" do |f| %>
         
-        <%= f.hidden_field :payment_method, value: "vipps", id: "payment_method" %>
+        <%= f.hidden_field :payment_method, id: "payment_method" %>
 
         <div class="bg-gray-50 p-4 rounded-lg">
           <h3 class="font-semibold mb-2 text-gray-700">Sammendrag</h3>
           <p class="text-gray-700">Total: <%= number_to_currency(@agreement.total_price || 0) %></p>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-blue-800">
-            <strong>ℹ️ Betaling via Vipps</strong><br>
-            Du blir sendt til Vipps for å fullføre betalingen. Kvittering mottar du i Vipps-appen.
-          </p>
-        </div>
+        <button type="button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">
+          <span class="block">Faktura</span>
+          <span class="block mt-1 text-sm">Faktura sendes på e-post</span>
+        </button>
 
-        <%= f.submit "Betal med Vipps", 
-              class: "w-full bg-[#FF5B24] hover:bg-[#e6501f] text-white px-6 py-3 rounded-lg text-lg font-medium" %>
-        
-        <% if Rails.env.development? %>
-          <p class="text-xs text-gray-500 text-center">(Simulert betaling i utvikling)</p>
-        <% end %>
+        <button type="button" data-payment-method="vipps" class="w-full min-h-16 bg-[#FF5B24] hover:bg-[#e6501f] text-white px-4 py-2 rounded-lg text-lg font-medium">
+          <span class="block">Vipps</span>
+          <% if Rails.env.development? %>
+            <span class="block mt-1 text-sm">(Simulert betaling i utvikling)</span>
+          <% end %>
+        </button>
+
+        <%= f.submit "Fullfør betaling", 
+              class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
       <% end %>
     </div>
   </div>
 </div>
+
+<%= javascript_tag nonce: true do %>
+  document.querySelectorAll("[data-payment-method]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.getElementById("payment_method").value = button.dataset.paymentMethod;
+    });
+  });
+<% end %>

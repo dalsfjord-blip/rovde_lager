@@ -4,6 +4,8 @@ class StorageItemsController < ApplicationController
   def index
     start_agreement if params[:new].present?
     @agreement = current_agreement || RentalAgreement.new
+    @vipps_payment_url = session[:vipps_payment_url]
+    @vipps_reference = session[:vipps_reference]
     @agreement.storage_items.build if @agreement.storage_items.empty?
     @storage_items = @agreement.storage_items
     set_pickup_dates
@@ -15,10 +17,15 @@ class StorageItemsController < ApplicationController
     set_payment_status
 
     if @agreement.save
-      CreatePowerOfficeInvoiceJob.perform_later(@agreement.id) if @agreement.invoice?
       send_confirmation_email
-      store_current_agreement(@agreement)
-      redirect_to receipt_path, notice: payment_notice
+      vipps_payment_url = start_payment_processing
+      start_agreement
+      if vipps_payment_url
+        session[:vipps_payment_url] = vipps_payment_url
+        session[:vipps_reference] = @agreement.vipps_reference
+      end
+      notice = @agreement.invoice? ? payment_notice : (vipps_payment_url ? payment_notice : "Vipps-kravet kunne ikke opprettes.")
+      redirect_to storage_items_path(new: true), notice: notice
     else
       @storage_items = @agreement.storage_items
       set_pickup_dates
@@ -51,6 +58,7 @@ class StorageItemsController < ApplicationController
       :send_email_copy,
       :contract_approved,
       :payment_method,
+      :business_customer,
       :billing_company_name,
       :billing_organization_number,
       :billing_email,
@@ -64,17 +72,56 @@ class StorageItemsController < ApplicationController
     total_price = total_meters * 700
     @agreement.total_meters = total_meters
     @agreement.total_price = total_price
-    @agreement.total_price_with_vat = total_price
-    @agreement.vat_amount = total_price - (total_price / (1 + RentalAgreement::VAT_RATE))
+    if @agreement.business_customer?
+      @agreement.vat_amount = (total_price * RentalAgreement::VAT_RATE).round(2)
+      @agreement.total_price_with_vat = total_price + @agreement.vat_amount
+    else
+      @agreement.vat_amount = 0
+      @agreement.total_price_with_vat = total_price
+    end
   end
 
   def set_payment_status
-    @agreement.payment_status = @agreement.payment_method == "vipps" ? "paid" : "pending"
-    @agreement.invoice_sync_status = "queued" if @agreement.invoice?
+    @agreement.payment_status = @agreement.invoice? ? "invoice_sent" : "payment_pending"
   end
 
   def payment_notice
-    @agreement.payment_method == "vipps" ? "Betaling fullført (simulert)!" : "Faktura behandles."
+    @agreement.invoice? ? "Fakturaen sendes." : "Skann QR-koden for å betale med Vipps."
+  end
+
+  def start_payment_processing
+    if @agreement.invoice?
+      InvoiceDeliveryJob.perform_later(@agreement.id)
+      nil
+    else
+      create_vipps_payment
+    end
+  end
+
+  def create_vipps_payment
+    return create_demo_vipps_payment if Rails.env.development?
+
+    reference = "LAG-#{@agreement.id}-#{SecureRandom.uuid.delete('-')[0, 20].upcase}"
+    @agreement.update!(vipps_reference: reference)
+    payment_url = VippsClient.new.create_payment(
+      reference: reference,
+      amount_in_oere: (@agreement.total_price_with_vat * 100).round,
+      return_url: vipps_callback_payment_url(reference: reference, host: ENV.fetch("APP_HOST", "localhost:3000")),
+      phone_number: @agreement.customer_phone,
+      description: "Sesonglagring #{@agreement.reference_number}"
+    )
+    @agreement.update!(vipps_payment_url: payment_url, vipps_payment_created_at: Time.current)
+    payment_url
+  rescue VippsClient::RequestError, VippsClient::ConfigurationError
+    @agreement.update!(payment_status: "failed")
+    nil
+  end
+
+  def create_demo_vipps_payment
+    reference = "DEMO-#{@agreement.id}-#{SecureRandom.uuid.delete('-')[0, 12].upcase}"
+    payment_url = "https://example.test/vipps-demo/#{reference}"
+    @agreement.update!(vipps_reference: reference, vipps_payment_url: payment_url, vipps_payment_created_at: Time.current)
+    payment_url
   end
 
   def set_pickup_dates

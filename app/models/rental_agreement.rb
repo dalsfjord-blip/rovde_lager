@@ -13,6 +13,9 @@ class RentalAgreement < ApplicationRecord
   validates :contract_approved, inclusion: { in: [ true ], message: "må godkjennes" }
   validates :total_meters, :total_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :payment_method, inclusion: { in: %w[vipps invoice] }
+  validates :payment_status, inclusion: { in: %w[payment_pending paid failed cancelled invoice_sent] }, allow_nil: true
+  validates :vipps_reference, uniqueness: true, allow_nil: true
+  validates :invoice_number, uniqueness: true, allow_nil: true
   validates :billing_company_name, :billing_organization_number, :billing_email, presence: true, if: :invoice?
   validates :billing_email, format: { with: URI::MailTo::EMAIL_REGEXP }, if: :invoice?
   validates :billing_organization_number, format: { with: /\A\d{9}\z/, message: "må bestå av ni sifre" }, if: :invoice?
@@ -23,10 +26,12 @@ class RentalAgreement < ApplicationRecord
     payment_method == "invoice"
   end
 
-  def net_price
-    return BigDecimal("0") if total_price_with_vat.blank?
+  def business_customer?
+    business_customer
+  end
 
-    total_price_with_vat / (1 + VAT_RATE)
+  def net_price
+    total_price || BigDecimal("0")
   end
 
   private

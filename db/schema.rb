@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_102000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,21 +46,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_120000) do
     t.string "billing_company_name"
     t.string "billing_email"
     t.string "billing_organization_number"
+    t.boolean "business_customer", default: false, null: false
     t.boolean "contract_approved"
     t.datetime "created_at", null: false
     t.string "customer_email"
     t.string "customer_name"
     t.string "customer_phone"
-    t.string "invoice_sync_error"
-    t.string "invoice_sync_status"
-    t.datetime "invoice_synced_at"
+    t.date "invoice_due_date"
+    t.string "invoice_number"
+    t.datetime "invoice_sent_at"
+    t.datetime "paid_at"
     t.string "payment_method"
     t.string "payment_status"
     t.date "pickup_date"
-    t.string "power_office_customer_id"
-    t.string "power_office_invoice_id"
-    t.string "power_office_invoice_number"
-    t.string "power_office_sales_order_id"
+    t.datetime "receipt_sent_at"
     t.string "reference_number"
     t.boolean "send_email_copy"
     t.boolean "special_needs"
@@ -70,6 +69,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_120000) do
     t.decimal "total_price_with_vat", precision: 12, scale: 2
     t.datetime "updated_at", null: false
     t.decimal "vat_amount", precision: 12, scale: 2
+    t.datetime "vipps_payment_created_at"
+    t.text "vipps_payment_url"
+    t.string "vipps_reference"
+    t.index ["invoice_number"], name: "index_rental_agreements_on_invoice_number", unique: true
+    t.index ["vipps_reference"], name: "index_rental_agreements_on_vipps_reference", unique: true
   end
 
   create_table "storage_items", force: :cascade do |t|

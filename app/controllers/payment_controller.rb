@@ -1,40 +1,40 @@
 class PaymentController < ApplicationController
   before_action :load_agreement, only: [ :show, :create ]
+  skip_before_action :require_pin, only: :status
+  skip_before_action :verify_authenticity_token, only: :complete_demo
 
   def show
     render :index
   end
 
   def create
-    case params[:payment_method]
-    when "vipps"
-      if Rails.env.development? || Rails.env.test?
-        # Simulert betaling for lokal testing
-        @agreement.update!(payment_method: "vipps", payment_status: "paid")
-        redirect_to receipt_path, notice: "Betaling fullført (simulert)!"
-      else
-        # Ekte Vipps-integrasjon
-        start_vipps_payment
-      end
-    when "invoice"
-      @agreement.update!(payment_method: "invoice", payment_status: "pending")
-      redirect_to receipt_path, notice: "Faktura opprettet!"
-    else
-      redirect_to payment_path, alert: "Vennligst velg betalingsmetode"
-    end
+    redirect_to storage_items_path(new: true), alert: "Betaling startes fra registreringsskjemaet."
   end
 
-  # Kunden rutes hit fra Vipps etter gjennomført eller avbrutt betaling
   def vipps_callback
-    agreement = RentalAgreement.find_by(id: params[:agreement_id])
+    redirect_to storage_items_path(new: true), notice: "Vipps-betalingen behandles."
+  end
 
-    if agreement
-      # Webhooken oppdaterer normalt statusen til "paid",
-      # men vi sender brukeren til kvitteringen her.
-      redirect_to receipt_path, notice: "Takk! Din Vipps-betaling behandles."
-    else
-      redirect_to payment_path, alert: "Kunne ikke verifisere betalingsavtalen."
+  def status
+    agreement = RentalAgreement.find_by(vipps_reference: params[:reference])
+    return head :not_found unless agreement
+
+    session.delete(:vipps_payment_url) if agreement.payment_status == "paid"
+    session.delete(:vipps_reference) if agreement.payment_status == "paid"
+    render json: { status: agreement.payment_status }
+  end
+
+  def complete_demo
+    return head :not_found unless Rails.env.development?
+
+    agreement = RentalAgreement.find_by(vipps_reference: params[:reference])
+    return head :not_found unless agreement&.payment_status == "payment_pending"
+
+    agreement.with_lock do
+      agreement.update!(payment_status: "paid", paid_at: Time.current)
+      InvoiceDeliveryJob.perform_later(agreement.id, receipt: true) if agreement.business_customer?
     end
+    head :no_content
   end
 
   private

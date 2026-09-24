@@ -1,0 +1,9 @@
+Hei <%= @agreement.billing_company_name %>,
+
+Vedlagt følger faktura <%= @agreement.invoice_number %> for sesonglagring.
+
+Beløp å betale: <%= number_to_currency(@agreement.total_price_with_vat) %>
+Forfallsdato: <%= @agreement.invoice_due_date.strftime("%d.%m.%Y") %>
+
+Med vennlig hilsen
+Rovde Industripark

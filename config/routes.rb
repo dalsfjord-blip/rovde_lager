@@ -31,15 +31,12 @@ Rails.application.routes.draw do
   # Del 3: Betaling (OPPDATERT MED VIPPS CALLBACK)
   resource :payment, controller: "payment", only: [ :show, :create ] do
     get :vipps_callback, on: :member
+    get :status, on: :member
+    post :complete_demo, on: :member
   end
 
   # Webhook fra Vipps
   post "webhooks/vipps", to: "vipps_webhooks#receive"
-
-  # Kvittering
-  resource :receipt, controller: "receipt", only: [ :show ] do
-    post :email, on: :member
-  end
 
   # Root path
   root "storage_items#index"

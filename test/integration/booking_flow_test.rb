@@ -20,37 +20,34 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='rental_agreement[contract_approved]']:not([disabled])"
     assert_select "label", "Send avtaleteksten på e-post"
     assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
-    assert_select "button[data-payment-method='vipps']", "Vipps"
-    assert_select "button[data-payment-method='invoice']", "Faktura for bedrift"
+    assert_select "button[name='rental_agreement[payment_method]'][value='vipps']", "Betal med Vipps"
+    assert_select "button[data-payment-method='invoice']", "Bedriftskunde"
     assert_select "input[name='rental_agreement[billing_company_name]']", 1
     assert_select "input[name='rental_agreement[billing_organization_number]']", 1
     assert_select "input[name='rental_agreement[billing_email]']", 1
 
-    assert_enqueued_with(job: CreatePowerOfficeInvoiceJob) do
-      post storage_items_path, params: registration_params
-    end
+    post storage_items_path, params: registration_params
 
     agreement = RentalAgreement.last
-    assert_redirected_to receipt_path
+    assert_redirected_to storage_items_path(new: true)
     assert_equal 4.5, agreement.total_meters.to_f
     assert_equal 3150, agreement.total_price.to_f
     assert_equal "Ola Nordmann", agreement.customer_name
     assert agreement.contract_approved
     assert agreement.send_email_copy
     assert_equal "invoice", agreement.payment_method
-    assert_equal "pending", agreement.payment_status
+    assert_equal "invoice_sent", agreement.payment_status
     assert_equal "Rovde AS", agreement.billing_company_name
     assert_equal "123456789", agreement.billing_organization_number
     assert_equal "faktura@rovde.example", agreement.billing_email
-    assert_equal 630, agreement.vat_amount.to_f
-    assert_equal 3150, agreement.total_price_with_vat.to_f
-    assert_equal "queued", agreement.invoice_sync_status
+    assert_equal 787.5, agreement.vat_amount.to_f
+    assert_equal 3937.5, agreement.total_price_with_vat.to_f
+    assert_nil agreement.invoice_sent_at
 
-    get receipt_path
+    get storage_items_path
 
     assert_response :success
-    assert_includes response.body, agreement.reference_number
-    assert_includes response.body, "Ola Nordmann"
+    assert_select "h1", "Registrering"
   end
 
   test "attaches camera photos submitted with the registration" do
@@ -61,7 +58,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
 
     post storage_items_path, params: registration_params(payment_method: "vipps", photos: [Rack::Test::UploadedFile.new(photo.path, "image/jpeg")])
 
-    assert_redirected_to receipt_path
+    assert_redirected_to storage_items_path(new: true)
     assert_equal 1, RentalAgreement.last.reload.photos.count
   ensure
     photo.unlink
@@ -97,9 +94,9 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     )
 
     sign_in
-    get receipt_path
+    get storage_items_path
 
-    assert_redirected_to storage_items_path
+    assert_response :success
     assert_not_equal agreement.id, session[:rental_agreement_id]
   end
 
@@ -113,6 +110,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
         customer_email: "ola@example.com",
         pickup_date: "2026-04-01",
         payment_method: payment_method,
+        business_customer: payment_method == "invoice" ? "1" : "0",
         billing_company_name: billing_company_name,
         billing_organization_number: billing_organization_number,
         billing_email: "faktura@rovde.example",

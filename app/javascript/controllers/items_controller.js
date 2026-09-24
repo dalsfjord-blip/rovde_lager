@@ -2,9 +2,16 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["meters", "itemTemplate"];
-  static values = { pricePerMeter: { type: Number, default: 700 } };
+  static values = {
+    pricePerMeter: { type: Number, default: 700 },
+    businessCustomer: { type: Boolean, default: false }
+  };
 
   connect() {
+    this.calculateTotal();
+  }
+
+  businessCustomerValueChanged() {
     this.calculateTotal();
   }
 
@@ -54,15 +61,20 @@ export default class extends Controller {
     const totalMeters = this.metersTargets.reduce((total, input) => total + (parseFloat(input.value) || 0), 0);
     const totalPrice = totalMeters * this.pricePerMeterValue;
 
+    const vatAmount = this.businessCustomerValue ? totalPrice * 0.25 : 0;
+    const totalWithVat = totalPrice + vatAmount;
     const totalMetersEl = document.getElementById("total_meters");
+    const netPriceEl = document.getElementById("net_price");
+    const vatAmountEl = document.getElementById("vat_amount");
     const totalPriceEl = document.getElementById("total_price");
+    const formatPrice = (price) => `${price.toLocaleString("no-NO", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })} NOK`;
 
     if (totalMetersEl) totalMetersEl.textContent = totalMeters.toFixed(2);
-    if (totalPriceEl) {
-      totalPriceEl.textContent = `${totalPrice.toLocaleString("no-NO", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      })} NOK`;
-    }
+    if (netPriceEl) netPriceEl.textContent = formatPrice(totalPrice);
+    if (vatAmountEl) vatAmountEl.textContent = formatPrice(vatAmount);
+    if (totalPriceEl) totalPriceEl.textContent = formatPrice(totalWithVat);
   }
 }

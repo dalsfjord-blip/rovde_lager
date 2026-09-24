@@ -1,8 +1,46 @@
-<div class="max-w-4xl mx-auto p-4 md:p-6" data-controller="items">
+<div class="max-w-4xl mx-auto p-4 md:p-6" data-controller="items" data-items-business-customer-value="false">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Registrering</h1>
     <%= button_to "Logg ut", logout_path, method: :delete, class: "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm" %>
   </div>
+
+  <% if @vipps_payment_url.present? %>
+    <dialog id="vipps_payment_dialog" class="w-full max-w-md rounded-lg p-6 text-center shadow-xl backdrop:bg-black/50">
+      <h2 class="text-xl font-semibold text-gray-800">Betal med Vipps</h2>
+      <p class="mt-2 text-gray-700">La kunden skanne QR-koden og fullføre betalingen i Vipps.</p>
+      <%= image_tag "data:image/png;base64,#{Base64.strict_encode64(RQRCode::QRCode.new(@vipps_payment_url).as_png(size: 240).to_s)}", alt: "Vipps QR-kode", class: "mx-auto mt-4 h-60 w-60" %>
+      <p class="mt-4 text-sm text-gray-600">Venter på betalingsbekreftelse.</p>
+      <% if Rails.env.development? %>
+        <button type="button" id="complete_demo_payment" class="mt-4 rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700">Simuler betaling og lukk</button>
+      <% end %>
+    </dialog>
+    <%= javascript_tag nonce: true do %>
+      (() => {
+        const dialog = document.getElementById("vipps_payment_dialog");
+        dialog.showModal();
+        const completePayment = () => {
+          window.clearInterval(interval);
+          dialog.close();
+          window.location.replace("<%= storage_items_path(new: true) %>");
+        };
+        const interval = window.setInterval(async () => {
+          const response = await fetch("<%= status_payment_url(reference: @vipps_reference) %>");
+          if (!response.ok) return;
+          const payment = await response.json();
+          if (payment.status === "paid") completePayment();
+        }, 3000);
+        const demoPaymentButton = document.getElementById("complete_demo_payment");
+        demoPaymentButton?.addEventListener("click", async () => {
+          demoPaymentButton.disabled = true;
+          await fetch("<%= complete_demo_payment_url(reference: @vipps_reference) %>", {
+            method: "POST",
+            headers: { "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content }
+          });
+          completePayment();
+        });
+      })();
+    <% end %>
+  <% end %>
 
   <%= form_with model: @agreement, url: storage_items_path, method: :post, class: "space-y-6", id: "items_form" do |f| %>
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
@@ -108,13 +146,14 @@
 
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Betaling</h2>
-      <%= f.hidden_field :payment_method, id: "payment_method", required: true %>
-      <div class="space-y-3">
-        <button type="button" data-payment-method="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Vipps</button>
-        <button type="button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Faktura for bedrift</button>
-      </div>
+      <%= f.hidden_field :payment_method, id: "payment_method", value: "vipps", required: true %>
+      <%= f.hidden_field :business_customer, id: "business_customer", value: @agreement.business_customer? ? "1" : "0" %>
+      <button type="button" id="business_customer_button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Bedriftskunde</button>
       <div id="business_invoice_fields" class="mt-4 space-y-4 border-t border-gray-200 pt-4" hidden>
-        <p class="text-sm text-gray-600">Faktura er kun tilgjengelig for bedrifter. Opplysningene brukes til fakturering gjennom PowerOffice.</p>
+        <div class="flex items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">Velg bedrift for å søke opp organisasjonsnummer og bedriftsnavn fra Brønnøysundregistrene.</p>
+          <button type="button" id="close_business_customer" class="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-800">Lukk</button>
+        </div>
         <div>
           <%= f.label :billing_company_name, "Bedriftsnavn *", class: "block text-sm font-medium text-gray-700 mb-1" %>
           <%= f.text_field :billing_company_name, id: "billing_company_name", autocomplete: "organization", class: "w-full px-3 py-2 border border-gray-300 rounded-md" %>
@@ -138,17 +177,19 @@
           <% end %>
         </div>
       </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-2">
+        <button type="submit" name="rental_agreement[payment_method]" value="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Betal med Vipps</button>
+        <button type="submit" id="send_invoice_button" name="rental_agreement[payment_method]" value="invoice" class="w-full min-h-16 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-lg font-medium" hidden>Send faktura</button>
+      </div>
     </div>
 
     <div class="bg-gray-50 p-4 md:p-6 rounded-lg">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Sammendrag</h2>
       <p class="text-gray-700">Total meter: <strong id="total_meters"><%= @agreement.total_meters || 0 %></strong></p>
-      <p class="text-gray-700">Pris ekskl. MVA: <strong><%= number_to_currency(@agreement.net_price) %></strong></p>
-      <p class="text-gray-700">MVA (25 %): <strong><%= number_to_currency(@agreement.vat_amount || 0) %></strong></p>
-      <p class="text-gray-700">Pris inkl. MVA: <strong id="total_price"><%= number_to_currency(@agreement.total_price_with_vat || @agreement.total_price || 0) %></strong></p>
+      <p class="text-gray-700">Pris ekskl. MVA: <strong id="net_price"><%= number_to_currency(@agreement.net_price) %></strong></p>
+      <p id="vat_summary" class="text-gray-700" hidden>MVA (25 %): <strong id="vat_amount"><%= number_to_currency(@agreement.vat_amount || 0) %></strong></p>
+      <p class="text-gray-700"><span id="total_price_label">Pris</span>: <strong id="total_price"><%= number_to_currency(@agreement.total_price_with_vat || @agreement.total_price || 0) %></strong></p>
     </div>
-
-    <%= f.submit "Fullfør registrering", class: "w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md text-lg font-medium" %>
 
     <p class="text-sm text-gray-600">
       Rovde Industripark, org.nr 987988290, e-post: torvik137@gmail.com
@@ -165,11 +206,17 @@
     const contractText = document.getElementById("contract_text");
     const contractApproval = document.getElementById("rental_agreement_contract_approved");
     const paymentMethod = document.getElementById("payment_method");
+    const businessCustomer = document.getElementById("business_customer");
     const businessInvoiceFields = document.getElementById("business_invoice_fields");
+    const sendInvoiceButton = document.getElementById("send_invoice_button");
+    const closeBusinessCustomer = document.getElementById("close_business_customer");
     const billingCompanyName = document.getElementById("billing_company_name");
     const billingOrganizationNumber = document.getElementById("billing_organization_number");
     const billingEmail = document.getElementById("billing_email");
     const brregResults = document.getElementById("brreg_results");
+    const vatSummary = document.getElementById("vat_summary");
+    const vatAmount = document.getElementById("vat_amount");
+    const totalPriceLabel = document.getElementById("total_price_label");
     if (!button || !input || input.dataset.previewInitialized) return;
     input.dataset.previewInitialized = "true";
     let selectedPhotos = [];
@@ -204,15 +251,31 @@
 
     contractText.addEventListener("scroll", enableContractApproval);
 
-    const setPaymentMethod = (method) => {
-      const invoiceSelected = method === "invoice";
-      paymentMethod.value = method;
-      businessInvoiceFields.hidden = !invoiceSelected;
-      billingCompanyName.required = invoiceSelected;
-      billingOrganizationNumber.required = invoiceSelected;
-      billingEmail.required = invoiceSelected;
+    const updatePriceSummary = (businessCustomerSelected) => {
+      const totalMeters = Array.from(document.querySelectorAll("[data-items-target='meters']")).reduce((total, input) => total + (parseFloat(input.value) || 0), 0);
+      const priceExcludingVat = totalMeters * 700;
+      const vat = businessCustomerSelected ? priceExcludingVat * 0.25 : 0;
+      const formatPrice = (price) => `${price.toLocaleString("no-NO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} NOK`;
 
-      if (!invoiceSelected) {
+      document.getElementById("net_price").textContent = formatPrice(priceExcludingVat);
+      document.getElementById("vat_amount").textContent = formatPrice(vat);
+      document.getElementById("total_price").textContent = formatPrice(priceExcludingVat + vat);
+    };
+
+    const setPaymentMethod = (method) => {
+      const businessCustomerSelected = method === "invoice";
+      paymentMethod.value = "vipps";
+      businessCustomer.value = businessCustomerSelected ? "1" : "0";
+      businessInvoiceFields.hidden = !businessCustomerSelected;
+      sendInvoiceButton.hidden = !businessCustomerSelected;
+      billingCompanyName.required = businessCustomerSelected;
+      billingOrganizationNumber.required = businessCustomerSelected;
+      billingEmail.required = businessCustomerSelected;
+      vatSummary.hidden = !businessCustomerSelected;
+      totalPriceLabel.textContent = businessCustomerSelected ? "Pris inkl. MVA" : "Pris";
+      updatePriceSummary(businessCustomerSelected);
+
+      if (!businessCustomerSelected) {
         billingCompanyName.value = "";
         billingOrganizationNumber.value = "";
         billingEmail.value = "";
@@ -264,6 +327,7 @@
     document.querySelectorAll("[data-payment-method]").forEach((button) => {
       button.addEventListener("click", () => setPaymentMethod(button.dataset.paymentMethod));
     });
+    closeBusinessCustomer.addEventListener("click", () => setPaymentMethod("vipps"));
 
     if (paymentMethod.value) setPaymentMethod(paymentMethod.value);
   })();

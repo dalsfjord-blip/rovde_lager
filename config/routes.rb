@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   resource :payment, controller: "payment", only: [ :show, :create ] do
     get :vipps_callback, on: :member
     get :status, on: :member
+    delete :dismiss, on: :member
     post :complete_demo, on: :member
   end
 

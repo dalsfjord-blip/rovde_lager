@@ -11,11 +11,15 @@ class VippsClient
     @base_url = configuration[:base_url].presence || "https://apitest.vipps.no"
   end
 
+  def configured?
+    [ @client_id, @client_secret, @subscription_key, @merchant_serial_number ].all?(&:present?)
+  end
+
   def create_payment(reference:, amount_in_oere:, return_url:, phone_number:, description:)
-    response = request(:post, "/epayment/v3/payments", {
+    response = request(:post, "/epayment/v1/payments", {
       amount: { value: amount_in_oere, currency: "NOK" },
-      paymentMethod: { type: "VIPPS" },
-      customer: { phoneNumber: phone_number },
+      paymentMethod: { type: "WALLET" },
+      customer: { phoneNumber: normalized_phone_number(phone_number) },
       returnUrl: return_url,
       userFlow: "WEB_REDIRECT",
       reference: reference,
@@ -26,6 +30,25 @@ class VippsClient
 
   def payment_details(reference)
     request(:get, "/epayment/v1/payments/#{ERB::Util.url_encode(reference)}")
+  end
+
+  def capture_payment(reference, amount_in_oere)
+    request(:post, "/epayment/v1/payments/#{ERB::Util.url_encode(reference)}/capture", {
+      modificationAmount: { value: amount_in_oere, currency: "NOK" }
+    }, idempotency_key: "capture-#{reference}")
+  end
+
+  def register_webhook(url:)
+    request(:post, "/webhooks/v1/webhooks", {
+      url: url,
+      events: [
+        "epayments.payment.authorized.v1",
+        "epayments.payment.captured.v1",
+        "epayments.payment.cancelled.v1",
+        "epayments.payment.aborted.v1",
+        "epayments.payment.expired.v1"
+      ]
+    }, idempotency_key: "webhook-#{Digest::SHA256.hexdigest(url)[0, 32]}")
   end
 
   private
@@ -40,7 +63,9 @@ class VippsClient
       request.headers["Idempotency-Key"] = idempotency_key if idempotency_key
       request.body = payload.to_json if payload
     end
-    raise RequestError, "Vipps returnerte status #{response.status}" unless response.success?
+    raise RequestError, "Vipps returnerte status #{response.status}: #{response.body.to_s.truncate(300)}" unless response.success?
+
+    return {} if response.body.blank?
 
     JSON.parse(response.body)
   rescue JSON::ParserError
@@ -49,7 +74,7 @@ class VippsClient
 
   def access_token
     Rails.cache.fetch("vipps/access_token", expires_in: 50.minutes) do
-      response = connection.post("#{@base_url}/accessToken/v3") do |request|
+      response = connection.post("#{@base_url}/accessToken/get") do |request|
         request.headers["client_id"] = @client_id
         request.headers["client_secret"] = @client_secret
         request.headers["Ocp-Apim-Subscription-Key"] = @subscription_key
@@ -59,6 +84,14 @@ class VippsClient
 
       JSON.parse(response.body).fetch("access_token")
     end
+  end
+
+  def normalized_phone_number(phone_number)
+    digits = phone_number.to_s.gsub(/\D/, "")
+    return "47#{digits}" if digits.match?(/\A\d{8}\z/)
+    return digits if digits.match?(/\A47\d{8}\z/)
+
+    raise RequestError, "Telefonnummer må være et norsk mobilnummer"
   end
 
   def connection

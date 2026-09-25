@@ -19,9 +19,17 @@ class PaymentController < ApplicationController
     agreement = RentalAgreement.find_by(vipps_reference: params[:reference])
     return head :not_found unless agreement
 
-    session.delete(:vipps_payment_url) if agreement.payment_status == "paid"
-    session.delete(:vipps_reference) if agreement.payment_status == "paid"
+    if %w[paid cancelled failed].include?(agreement.payment_status)
+      session.delete(:vipps_payment_url)
+      session.delete(:vipps_reference)
+    end
     render json: { status: agreement.payment_status }
+  end
+
+  def dismiss
+    session.delete(:vipps_payment_url)
+    session.delete(:vipps_reference)
+    head :no_content
   end
 
   def complete_demo

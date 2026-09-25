@@ -12,6 +12,8 @@ class SessionsController < ApplicationController
 
     if valid_pin.present? && ActiveSupport::SecurityUtils.secure_compare(params[:pin].to_s, valid_pin)
       session[:authenticated] = true
+      session.delete(:vipps_payment_url)
+      session.delete(:vipps_reference)
       start_agreement
       redirect_to storage_items_path, notice: "Innlogget!"
     else
@@ -22,6 +24,8 @@ class SessionsController < ApplicationController
 
   def destroy
     session.delete(:authenticated)
+    session.delete(:vipps_payment_url)
+    session.delete(:vipps_reference)
     start_agreement
     redirect_to login_path, notice: "Logget ut"
   end

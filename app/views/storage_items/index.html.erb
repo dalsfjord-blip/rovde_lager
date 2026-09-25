@@ -5,10 +5,15 @@
   </div>
 
   <% if @vipps_payment_url.present? %>
-    <dialog id="vipps_payment_dialog" class="w-full max-w-md rounded-lg p-6 text-center shadow-xl backdrop:bg-black/50">
-      <h2 class="text-xl font-semibold text-gray-800">Betal med Vipps</h2>
-      <p class="mt-2 text-gray-700">La kunden skanne QR-koden og fullføre betalingen i Vipps.</p>
-      <%= image_tag "data:image/png;base64,#{Base64.strict_encode64(RQRCode::QRCode.new(@vipps_payment_url).as_png(size: 240).to_s)}", alt: "Vipps QR-kode", class: "mx-auto mt-4 h-60 w-60" %>
+    <dialog id="vipps_payment_dialog" class="fixed bottom-4 right-4 m-0 w-full max-w-md rounded-lg p-6 text-center shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800">Betal med Vipps</h2>
+          <p class="mt-2 text-gray-700">La kunden skanne QR-koden og fullføre betalingen i Vipps.</p>
+        </div>
+        <button type="button" id="dismiss_vipps_payment" class="rounded px-3 py-1 text-lg font-medium text-gray-600 hover:bg-gray-100" aria-label="Lukk Vipps QR-kode">×</button>
+      </div>
+      <%= image_tag "data:image/png;base64,#{Base64.strict_encode64(RQRCode::QRCode.new(@vipps_payment_url).as_png(size: 768).to_s)}", alt: "Vipps QR-kode", class: "mx-auto mt-4 h-96 w-96 max-w-full", style: "image-rendering: pixelated;" %>
       <p class="mt-4 text-sm text-gray-600">Venter på betalingsbekreftelse.</p>
       <% if Rails.env.development? %>
         <button type="button" id="complete_demo_payment" class="mt-4 rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700">Simuler betaling og lukk</button>
@@ -17,7 +22,7 @@
     <%= javascript_tag nonce: true do %>
       (() => {
         const dialog = document.getElementById("vipps_payment_dialog");
-        dialog.showModal();
+        dialog.show();
         const completePayment = () => {
           window.clearInterval(interval);
           dialog.close();
@@ -27,8 +32,17 @@
           const response = await fetch("<%= status_payment_url(reference: @vipps_reference) %>");
           if (!response.ok) return;
           const payment = await response.json();
-          if (payment.status === "paid") completePayment();
+          if (["paid", "cancelled", "failed"].includes(payment.status)) completePayment();
         }, 3000);
+        const dismissPaymentButton = document.getElementById("dismiss_vipps_payment");
+        dismissPaymentButton.addEventListener("click", async () => {
+          window.clearInterval(interval);
+          await fetch("<%= dismiss_payment_url %>", {
+            method: "DELETE",
+            headers: { "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content }
+          });
+          dialog.close();
+        });
         const demoPaymentButton = document.getElementById("complete_demo_payment");
         demoPaymentButton?.addEventListener("click", async () => {
           demoPaymentButton.disabled = true;

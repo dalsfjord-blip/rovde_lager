@@ -99,7 +99,7 @@ class StorageItemsController < ApplicationController
   end
 
   def create_vipps_payment
-    return create_demo_vipps_payment if Rails.env.development?
+    return create_demo_vipps_payment unless VippsClient.new.configured?
 
     reference = "LAG-#{@agreement.id}-#{SecureRandom.uuid.delete('-')[0, 20].upcase}"
     @agreement.update!(vipps_reference: reference)

@@ -82,7 +82,7 @@ class StorageItemsController < ApplicationController
   end
 
   def set_payment_status
-    @agreement.payment_status = @agreement.invoice? ? "invoice_sent" : "payment_pending"
+    @agreement.payment_status = @agreement.invoice? ? "invoice_pending" : "payment_pending"
   end
 
   def payment_notice

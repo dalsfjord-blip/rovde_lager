@@ -12,7 +12,7 @@ class InvoiceDeliveryJob < ApplicationJob
         invoice_due_date: agreement.invoice_due_date || 14.days.from_now.to_date
       )
       receipt ? InvoiceMailer.paid_receipt(agreement).deliver_now : InvoiceMailer.invoice(agreement).deliver_now
-      agreement.update!(receipt ? { receipt_sent_at: Time.current } : { invoice_sent_at: Time.current })
+      agreement.update!(receipt ? { receipt_sent_at: Time.current } : { payment_status: "invoice_sent", invoice_sent_at: Time.current })
     end
   end
 end

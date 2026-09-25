@@ -29,7 +29,10 @@ class InvoicePdf
       pdf.text "MVA (25 %): #{format_amount(@agreement.vat_amount)}", align: :right
       pdf.text "Å betale: #{format_amount(@agreement.total_price_with_vat)}", align: :right, style: :bold
       pdf.move_down 24
-      pdf.text "Betalingsfrist: #{@agreement.invoice_due_date.strftime('%d.%m.%Y')}" if @document_type == "FAKTURA"
+      if @document_type == "FAKTURA"
+        pdf.text "Betalingsfrist: #{@agreement.invoice_due_date.strftime('%d.%m.%Y')}"
+        pdf.text "Kontonummer for innbetaling: 3626 58 20780"
+      end
       pdf.text "Betalt med Vipps: #{@agreement.paid_at.strftime('%d.%m.%Y %H:%M')}" if @agreement.paid_at.present?
       pdf.text "Rovde Industripark, org.nr 987988290"
     end.render

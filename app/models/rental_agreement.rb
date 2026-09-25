@@ -13,7 +13,7 @@ class RentalAgreement < ApplicationRecord
   validates :contract_approved, inclusion: { in: [ true ], message: "må godkjennes" }
   validates :total_meters, :total_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :payment_method, inclusion: { in: %w[vipps invoice] }
-  validates :payment_status, inclusion: { in: %w[payment_pending capture_pending paid failed cancelled invoice_sent] }, allow_nil: true
+  validates :payment_status, inclusion: { in: %w[payment_pending capture_pending paid failed cancelled invoice_pending invoice_sent] }, allow_nil: true
   validates :vipps_reference, uniqueness: true, allow_nil: true
   validates :invoice_number, uniqueness: true, allow_nil: true
   validates :billing_company_name, :billing_organization_number, :billing_email, presence: true, if: :invoice?
@@ -59,7 +59,7 @@ class RentalAgreement < ApplicationRecord
   end
 
   def self.next_document_number(name)
-    sequence = DocumentNumberSequence.create_or_find_by!(name: name)
+    sequence = DocumentNumberSequence.find_or_create_by!(name: name)
     sequence.with_lock do
       sequence.increment!(:current_value)
       sequence.current_value

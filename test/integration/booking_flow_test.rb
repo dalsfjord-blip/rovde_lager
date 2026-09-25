@@ -22,6 +22,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
     assert_select "button[name='rental_agreement[payment_method]'][value='vipps']", "Betal med Vipps"
     assert_select "button[data-payment-method='invoice']", "Bedriftskunde"
+    assert_select "button#send_invoice_button[name='rental_agreement[payment_method]'][value='invoice']", "Betal senere"
     assert_select "input[name='rental_agreement[billing_company_name]']", 1
     assert_select "input[name='rental_agreement[billing_organization_number]']", 1
     assert_select "input[name='rental_agreement[billing_email]']", 1
@@ -36,7 +37,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert agreement.contract_approved
     assert agreement.send_email_copy
     assert_equal "invoice", agreement.payment_method
-    assert_equal "invoice_sent", agreement.payment_status
+    assert_equal "invoice_pending", agreement.payment_status
     assert_equal "Rovde AS", agreement.billing_company_name
     assert_equal "123456789", agreement.billing_organization_number
     assert_equal "faktura@rovde.example", agreement.billing_email

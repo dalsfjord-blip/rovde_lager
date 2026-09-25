@@ -67,6 +67,17 @@ fly logs --app rovde-lager
 
 Test deretter helseendepunktet på `https://<app-host>/up`, innlogging, registrering, e-post og bakgrunnsjobber.
 
+### Databasekapasitet
+
+Postgres-maskinen må ha minst 1 GB RAM. 256 MB gir minne- og IO-press som kan bryte databaseforbindelser og gi `500`-feil under registrering eller Vipps-betaling.
+
+```bash
+fly machine status <database-machine-id> --app rovde-lager-db
+fly machine update <database-machine-id> --app rovde-lager-db --vm-memory 1024 --yes
+```
+
+Bekreft at kontrollene `pg`, `role` og `vm` er friske før du prøver betaling på nytt.
+
 ## Vipps Sandbox
 
 Sandbox må bruke en offentlig HTTPS-adresse som Vipps kan nå. Lokal `localhost` fungerer ikke for webhooker. Ved lokal test kan en kortvarig HTTPS-tunnel brukes, mens Fly-appens HTTPS-adresse kan brukes for et varig testmiljø.

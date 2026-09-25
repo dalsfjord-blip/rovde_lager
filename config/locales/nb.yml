@@ -10,3 +10,17 @@ nb:
   date:
     formats:
       long: "%d. %B %Y"
+    month_names:
+      - ~
+      - januar
+      - februar
+      - mars
+      - april
+      - mai
+      - juni
+      - juli
+      - august
+      - september
+      - oktober
+      - november
+      - desember

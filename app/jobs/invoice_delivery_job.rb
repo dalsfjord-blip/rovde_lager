@@ -8,7 +8,7 @@ class InvoiceDeliveryJob < ApplicationJob
       return if !receipt && agreement.invoice_sent_at.present?
 
       agreement.update!(
-        invoice_number: agreement.invoice_number || "RIP-#{agreement.id.to_s.rjust(6, '0')}",
+        invoice_number: agreement.invoice_number || RentalAgreement.next_invoice_number,
         invoice_due_date: agreement.invoice_due_date || 14.days.from_now.to_date
       )
       receipt ? InvoiceMailer.paid_receipt(agreement).deliver_now : InvoiceMailer.invoice(agreement).deliver_now

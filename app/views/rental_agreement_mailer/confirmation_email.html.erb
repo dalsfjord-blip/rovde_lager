@@ -118,10 +118,7 @@
   <div class="info-box">
     <strong>Betalingsmetode:</strong> <%= @agreement.invoice? ? "Faktura" : @agreement.payment_method&.capitalize || "Ikke valgt" %><br>
     <% if @agreement.invoice? %>
-      <strong>Fakturamottaker:</strong> <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)<br>
-      <strong>Fakturastatus:</strong> Faktura behandles
-    <% else %>
-      <strong>Status:</strong> <%= @agreement.payment_status&.capitalize || "Ikke betalt" %>
+      <strong>Fakturamottaker:</strong> <%= @agreement.billing_company_name %> (<%= @agreement.billing_organization_number %>)
     <% end %>
   </div>
   
@@ -144,10 +141,9 @@
   
   <h2>Leiekontrakt</h2>
   <div class="contract-box">
-    <h3 style="margin-top: 0;">Vilkår for lagring</h3>
-    <p>Dette er en standard leiekontrakt for sesonglagring av kjøretøy og båter. Alle objekter lagres på eget ansvar.</p>
-    <p>Lagringsperioden er fra innlevering til avtalt hentedato. Betaling skjer via Vipps eller faktura.</p>
-    <p>Ved spørsmål, kontakt lagringsansvarlig.</p>
+    <p>Leietaker er ansvarlig for at enheten er forsikret. Vi gjør oppmerksom på at deres bobil, campingvogn, båt, motor ikke er forsikret av lagringsstedet under lagringsperioden. I tilfelle brann, tyveri, vannskader, skader som følge av mus i enheten eller lignende, er de selv eller deres kaskoforsikring ansvarlig for eventuell skade på deres objekt. Alle løsøre som puter, fender, tauverk, dregger etc. bør tas ut før levering. Løsøre som blir liggende åpent oppbevares på eget ansvar.</p>
+    <p>Rovde Industripark har anledning til å avslutte leieforholdet dersom større leietakere er interessert i lokalitetene. Dersom Rovde Industripark får oppdrag som krever stor lagringsplass og at båter, campingvogner, bobiler, utstyr må flyttes, skal prisen reduseres med 50 %.</p>
+    <p>Utleier behandler leietakers personopplysninger (navn, telefonnummer, e-post og informasjon om det lagrede objektet) for å kunne administrere og gjennomføre leieavtalen, samt for å oppfylle lovpålagte plikter (som regnskapsføring). Opplysningene lagres trygt så lenge leieforholdet varer, og slettes når formålet med behandlingen og eventuelle lovpålagte oppbevaringsfrister utløper. Leietaker har rett til innsyn i, samt korrigering av, sine lagrede personopplysninger.</p>
   </div>
   
   <div class="footer">

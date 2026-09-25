@@ -6,7 +6,7 @@ class RentalAgreement < ApplicationRecord
   has_many_attached :photos
 
   before_validation :normalize_billing_organization_number
-  before_create :generate_reference_number
+  after_create :generate_reference_number
 
   validates :customer_name, :customer_phone, :customer_email, presence: true
   validates :customer_email, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -34,6 +34,10 @@ class RentalAgreement < ApplicationRecord
     total_price || BigDecimal("0")
   end
 
+  def self.next_invoice_number
+    "#{next_document_number("invoice")}-ROLAG"
+  end
+
   private
 
   def normalize_billing_organization_number
@@ -51,6 +55,14 @@ class RentalAgreement < ApplicationRecord
   end
 
   def generate_reference_number
-    self.reference_number ||= "LAG-#{SecureRandom.hex(4).upcase}"
+    update_column(:reference_number, "ROLAG-RE-#{self.class.next_document_number("reference")}") unless reference_number.present?
+  end
+
+  def self.next_document_number(name)
+    sequence = DocumentNumberSequence.create_or_find_by!(name: name)
+    sequence.with_lock do
+      sequence.increment!(:current_value)
+      sequence.current_value
+    end
   end
 end

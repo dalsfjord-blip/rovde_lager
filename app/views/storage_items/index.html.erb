@@ -105,11 +105,11 @@
 
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Hentedato</h2>
-      <div class="space-y-3">
+      <div class="space-y-5">
         <% @pickup_dates.each do |date| %>
-          <div class="flex items-center">
-            <%= f.radio_button :pickup_date, date[:id], class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
-            <%= f.label :pickup_date, date[:label], value: date[:id], class: "ml-2 block text-sm text-gray-700" %>
+          <div class="flex items-center py-1">
+            <%= f.radio_button :pickup_date, date[:id], class: "h-6 w-6 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-300" %>
+            <%= f.label :pickup_date, date[:label], value: date[:id], class: "ml-3 block text-lg text-gray-700" %>
           </div>
         <% end %>
       </div>

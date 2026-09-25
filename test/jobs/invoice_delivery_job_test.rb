@@ -26,5 +26,6 @@ class InvoiceDeliveryJobTest < ActionMailer::TestCase
     end
 
     assert agreement.reload.receipt_sent_at.present?
+    assert_match(/\A\d+-ROLAG\z/, agreement.invoice_number)
   end
 end

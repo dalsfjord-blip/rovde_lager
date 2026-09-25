@@ -11,12 +11,13 @@ Hovedtabell som inneholder all informasjon om kundens leieavtale.
 | Kolonne | Type | Beskrivelse |
 |---------|------|-------------|
 | `id` | bigint | Primærnøkkel (auto-generert) |
-| `reference_number` | string | Unik referanse (LAG-XXXX) |
+| `reference_number` | string | Unik referanse (`ROLAG-RE-10000` og oppover) |
 | `customer_name` | string | Kundens navn |
 | `customer_email` | string | Kundens e-postadresse |
 | `customer_phone` | string | Kundens telefonnummer |
 | `payment_method` | string | Betalingsmåte: "vipps" eller "invoice" |
-| `payment_status` | string | Status på betaling (vipps-relatert) |
+| `payment_status` | string | Status på betaling (Vipps-relatert) |
+| `invoice_number` | string | Fakturanummer (`10000-ROLAG` og oppover) |
 | `total_meters` | decimal | Totalt antall meter lagring |
 | `total_price` | decimal | Total pris i NOK |
 | `pickup_date` | date | Dato for henting av gjenstander |
@@ -136,7 +137,7 @@ SELECT
   si.meters
 FROM rental_agreements ra
 LEFT JOIN storage_items si ON si.rental_agreement_id = ra.id
-WHERE ra.reference_number = 'LAG-XXXX'
+WHERE ra.reference_number = 'ROLAG-RE-10000'
 ORDER BY si.created_at;
 ```
 

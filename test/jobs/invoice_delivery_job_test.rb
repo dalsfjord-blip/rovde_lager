@@ -27,6 +27,7 @@ class InvoiceDeliveryJobTest < ActionMailer::TestCase
 
     assert agreement.reload.receipt_sent_at.present?
     assert_match(/\A\d+-ROLAG\z/, agreement.invoice_number)
+    assert_equal [ "rovdeindustri@faktura.poweroffice.net" ], ActionMailer::Base.deliveries.last.cc
   end
 
   test "sends an invoice for afterpayment and marks it sent" do

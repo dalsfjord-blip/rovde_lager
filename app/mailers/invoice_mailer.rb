@@ -9,6 +9,7 @@ class InvoiceMailer < ApplicationMailer
     mail(
       to: agreement.billing_email,
       from: ENV.fetch("INVOICE_FROM_EMAIL", "faktura@rovdeindustripark.app"),
+      cc: ENV.fetch("ACCOUNTING_EMAIL", "rovdeindustri@faktura.poweroffice.net"),
       subject: "Faktura #{agreement.invoice_number} fra Rovde Industripark"
     )
   end
@@ -23,6 +24,7 @@ class InvoiceMailer < ApplicationMailer
     mail(
       to: agreement.billing_email,
       from: ENV.fetch("INVOICE_FROM_EMAIL", "faktura@rovdeindustripark.app"),
+      cc: ENV.fetch("ACCOUNTING_EMAIL", "rovdeindustri@faktura.poweroffice.net"),
       subject: "Betalingskvittering #{agreement.reference_number} fra Rovde Industripark"
     )
   end

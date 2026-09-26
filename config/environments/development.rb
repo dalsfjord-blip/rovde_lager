@@ -3,7 +3,8 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
   #
-  config.hosts << "placidly-refutable-shadily.ngrok-free.dev"
+  config.hosts << "rovdeindustripark.app"
+  config.hosts << "www.rovdeindustripark.app"
 
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
@@ -48,7 +49,7 @@ Rails.application.configure do
     # Preview email in browser instead of sending
     config.action_mailer.delivery_method = :letter_opener
   end
-  
+
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 

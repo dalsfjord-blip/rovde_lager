@@ -13,7 +13,7 @@ primary_region = 'arn'  # Stockholm, Sweden (nærmeste Norge)
   RAILS_ENV = 'production'
   RAILS_LOG_TO_STDOUT = 'true'
   RAILS_SERVE_STATIC_FILES = 'true'
-  APP_HOST = 'rovde-lager.fly.dev'
+  APP_HOST = 'rovdeindustripark.app'
 
 [http_service]
   internal_port = 3000

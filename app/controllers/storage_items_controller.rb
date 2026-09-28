@@ -24,7 +24,7 @@ class StorageItemsController < ApplicationController
         session[:vipps_payment_url] = vipps_payment_url
         session[:vipps_reference] = @agreement.vipps_reference
       end
-      notice = @agreement.invoice? ? payment_notice : (vipps_payment_url ? payment_notice : "Vipps-kravet kunne ikke opprettes.")
+      notice = @agreement.invoice? || @agreement.payment_method == "manual" ? payment_notice : (vipps_payment_url ? payment_notice : "Vipps-kravet kunne ikke opprettes.")
       redirect_to storage_items_path(new: true), notice: notice
     else
       @storage_items = @agreement.storage_items
@@ -82,18 +82,28 @@ class StorageItemsController < ApplicationController
   end
 
   def set_payment_status
-    @agreement.payment_status = @agreement.invoice? ? "invoice_pending" : "payment_pending"
+    @agreement.payment_status = if @agreement.invoice?
+      "invoice_pending"
+    elsif @agreement.payment_method == "manual"
+      "paid"
+    else
+      "payment_pending"
+    end
+    @agreement.paid_at = Time.current if @agreement.payment_method == "manual"
   end
 
   def payment_notice
-    @agreement.invoice? ? "Fakturaen sendes." : "Skann QR-koden for å betale med Vipps."
+    return "Fakturaen sendes." if @agreement.invoice?
+    return "Betalingen er registrert." if @agreement.payment_method == "manual"
+
+    "Skann QR-koden for å betale med Vipps."
   end
 
   def start_payment_processing
     if @agreement.invoice?
       InvoiceDeliveryJob.perform_later(@agreement.id)
       nil
-    else
+    elsif @agreement.payment_method == "vipps"
       create_vipps_payment
     end
   end
@@ -106,7 +116,7 @@ class StorageItemsController < ApplicationController
     payment_url = VippsClient.new.create_payment(
       reference: reference,
       amount_in_oere: (@agreement.total_price_with_vat * 100).round,
-      return_url: vipps_callback_payment_url(reference: reference, host: ENV.fetch("APP_HOST", "localhost:3000")),
+      return_url: "https://vipps.no",
       phone_number: @agreement.customer_phone,
       description: "Sesonglagring #{@agreement.reference_number}"
     )

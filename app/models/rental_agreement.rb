@@ -12,7 +12,7 @@ class RentalAgreement < ApplicationRecord
   validates :customer_email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :contract_approved, inclusion: { in: [ true ], message: "må godkjennes" }
   validates :total_meters, :total_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
-  validates :payment_method, inclusion: { in: %w[vipps invoice] }
+  validates :payment_method, inclusion: { in: %w[vipps invoice manual] }
   validates :payment_status, inclusion: { in: %w[payment_pending capture_pending paid failed cancelled invoice_pending invoice_sent] }, allow_nil: true
   validates :vipps_reference, uniqueness: true, allow_nil: true
   validates :invoice_number, uniqueness: true, allow_nil: true
@@ -21,6 +21,7 @@ class RentalAgreement < ApplicationRecord
   validates :billing_organization_number, format: { with: /\A\d{9}\z/, message: "må bestå av ni sifre" }, if: :invoice?
   validate :photo_count_within_limit
   validate :invoice_requires_business_details
+  validate :manual_payment_requires_private_customer
 
   def invoice?
     payment_method == "invoice"
@@ -48,6 +49,10 @@ class RentalAgreement < ApplicationRecord
     return unless invoice?
 
     errors.add(:payment_method, "kan bare brukes for bedrifter") unless billing_company_name.present? && billing_organization_number.present? && billing_email.present?
+  end
+
+  def manual_payment_requires_private_customer
+    errors.add(:payment_method, "kan bare brukes for privatkunder") if payment_method == "manual" && business_customer?
   end
 
   def photo_count_within_limit

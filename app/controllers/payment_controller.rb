@@ -51,7 +51,7 @@ class PaymentController < ApplicationController
     vipps = VippsClient.new
 
     # URL brukeren sendes tilbake til etter godkjenning i Vipps
-    return_url = vipps_callback_payment_index_url(agreement_id: @agreement.id)
+    return_url = "https://vipps.no"
 
     response = vipps.create_payment(
       reference: "AGR-#{@agreement.id}-#{SecureRandom.hex(2).upcase}",

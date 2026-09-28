@@ -12,7 +12,7 @@ class VippsPaymentJob < ApplicationJob
       payment_url = VippsClient.new.create_payment(
         reference: agreement.vipps_reference,
         amount_in_oere: (agreement.total_price_with_vat * 100).round,
-        return_url: Rails.application.routes.url_helpers.vipps_callback_payment_url(reference: reference, host: ENV.fetch("APP_HOST", "localhost:3000")),
+        return_url: "https://vipps.no",
         phone_number: agreement.customer_phone,
         description: "Sesonglagring #{agreement.reference_number}"
       )

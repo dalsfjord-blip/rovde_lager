@@ -191,9 +191,11 @@
           <% end %>
         </div>
       </div>
-      <div class="mt-4 grid gap-3 md:grid-cols-2">
+      <div class="mt-4 grid gap-3 md:grid-cols-3">
         <button type="submit" name="rental_agreement[payment_method]" value="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Betal med Vipps</button>
-        <button type="submit" id="send_invoice_button" name="rental_agreement[payment_method]" value="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium" hidden>Betal senere</button>
+<button type="submit" id="manual_payment_button" name="rental_agreement[payment_method]" value="manual" data-turbo-confirm="Bekrefter du at betalingen er mottatt og skal registreres som betalt?" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="background-color: #16a34a;">
+  Kort/kontant/krav
+</button>        <button type="submit" id="send_invoice_button" name="rental_agreement[payment_method]" value="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium" hidden>Betal senere</button>
       </div>
     </div>
 
@@ -223,6 +225,7 @@
     const businessCustomer = document.getElementById("business_customer");
     const businessInvoiceFields = document.getElementById("business_invoice_fields");
     const sendInvoiceButton = document.getElementById("send_invoice_button");
+    const manualPaymentButton = document.getElementById("manual_payment_button");
     const closeBusinessCustomer = document.getElementById("close_business_customer");
     const billingCompanyName = document.getElementById("billing_company_name");
     const billingOrganizationNumber = document.getElementById("billing_organization_number");
@@ -282,6 +285,7 @@
       businessCustomer.value = businessCustomerSelected ? "1" : "0";
       businessInvoiceFields.hidden = !businessCustomerSelected;
       sendInvoiceButton.hidden = !businessCustomerSelected;
+      manualPaymentButton.hidden = businessCustomerSelected;
       billingCompanyName.required = businessCustomerSelected;
       billingOrganizationNumber.required = businessCustomerSelected;
       billingEmail.required = businessCustomerSelected;
@@ -345,4 +349,10 @@
 
     if (paymentMethod.value) setPaymentMethod(paymentMethod.value);
   })();
+
+  document.addEventListener("turbo:load", () => {
+    const businessCustomer = document.getElementById("business_customer");
+    const manualPaymentButton = document.getElementById("manual_payment_button");
+    if (businessCustomer && manualPaymentButton) manualPaymentButton.hidden = businessCustomer.value === "1";
+  });
 <% end %>

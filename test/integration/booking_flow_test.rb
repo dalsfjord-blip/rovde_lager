@@ -21,6 +21,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "label", "Send avtaleteksten på e-post"
     assert_select "input[name='rental_agreement[payment_method]'][type='hidden']", 1
     assert_select "button[name='rental_agreement[payment_method]'][value='vipps']", "Betal med Vipps"
+    assert_select "button#manual_payment_button[name='rental_agreement[payment_method]'][value='manual'][data-turbo-confirm]", "Kort/kontant/krav"
     assert_select "button[data-payment-method='invoice']", "Bedriftskunde"
     assert_select "button#send_invoice_button[name='rental_agreement[payment_method]'][value='invoice']", "Betal senere"
     assert_select "input[name='rental_agreement[billing_company_name]']", 1
@@ -49,6 +50,19 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Registrering"
+  end
+
+  test "registers a private manual payment as paid" do
+    sign_in
+
+    post storage_items_path, params: registration_params(payment_method: "manual")
+
+    agreement = RentalAgreement.last
+    assert_redirected_to storage_items_path(new: true)
+    assert_equal "manual", agreement.payment_method
+    assert_equal "paid", agreement.payment_status
+    assert_not_nil agreement.paid_at
+    assert_nil agreement.vipps_payment_url
   end
 
   test "attaches camera photos submitted with the registration" do

@@ -8,7 +8,7 @@ Rails-applikasjon for nettbrettbasert registrering og sesonglagring av kjøretø
 - Registreringsnummer og oppslag mot Statens vegvesens kjøretøydata når API-nøkkel er konfigurert.
 - Inntil ti bilder per avtale via Active Storage.
 - Avtaletekst på e-post med HTML- og tekstversjon.
-- Privatkunde betaler 700 kr per meter uten MVA via Vipps ePayment.
+- Privatkunde betaler 700 kr per meter uten MVA via Vipps ePayment, eller får manuelt bekreftet kort-, kontant- eller Vippskrav-betaling.
 - Bedriftskunde kan velge Vipps med 25 % MVA eller PDF-faktura.
 - Brønnøysund-oppslag for bedriftsnavn og organisasjonsnummer.
 - Vipps QR-panel på nettbrettet med automatisk lukking ved fullført, avbrutt eller feilet betaling.
@@ -24,6 +24,10 @@ Rails-applikasjon for nettbrettbasert registrering og sesonglagring av kjøretø
 3. `AUTHORIZED`-webhooken verifiseres mot Vipps og utløser et idempotent capture-kall.
 4. Først ved signert `CAPTURED`-webhook settes avtalen til `paid`.
 5. For bedriftskunder køes PDF-kvittering etter `CAPTURED`.
+
+### Kort, kontant eller Vippskrav på stedet
+
+For privatkunder kan medarbeideren velge **Kort/kontant/krav** etter å ha kontrollert at betalingen er mottatt via terminal, kontant eller Vippskrav. En bekreftelsesdialog må godkjennes før avtalen lagres med betalingsmetode `manual`, status `paid` og registrert betalingstidspunkt. Knappen er ikke tilgjengelig for bedriftskunder.
 
 ### Bedriftsfaktura
 

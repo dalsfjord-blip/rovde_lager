@@ -37,6 +37,8 @@ De blokkerte kallene returnerer et generisk gateway-svar (`{"statusCode":404,"me
 
 Produksjonsnøkler bør bestilles med disse rettighetene bekreftet fra start, ikke som en driftsfeil å rette i etterkant.
 
+**Sjekket og utelukket:** Testet også med en tildelt secondary subscription key (samme abonnement, alternativ nøkkel for rotasjon). Ga identisk resultat, `goAllowSendInvoice: False` og `POST /salesorders` -> `404`. Bekrefter at feilen ikke ligger i valg av primary/secondary key, men i selve abonnementets/produktets konfigurasjon hos PowerOffice.
+
 ## Nåværende oppførsel i appen
 
 `PowerOfficeInvoiceSyncJob` kjøres automatisk for bedriftskunder etter at vår egen PDF-faktura er sendt (`InvoiceDeliveryJob`). Jobben:
@@ -67,3 +69,16 @@ POWEROFFICE_INVOICE_SEND_ENABLED=false
 - [ ] Be om egne produksjonsnøkler fra PowerOffice og sett dem som Fly-secrets, aldri i `.env`-filer eller git.
 
 Se [README.md](README.md) for betalingsflyten og [DEPLOYMENT.md](DEPLOYMENT.md) for produksjonsoppsett.
+
+## Gjenoppta arbeidet i en ny sesjon
+
+Alt arbeid ligger på branchen `power-office-integrasjon` (ikke rørt `main`/deploy-branchen). Når svar fra PowerOffice-support foreligger:
+
+1. Les denne filen (`POWEROFFICE_STATUS.md`) for full kontekst, ingen annen fil er nødvendig for å forstå blokkeringen.
+2. Lim inn svaret fra PowerOffice-support i samtalen. Hvis de har utstedt en ny/oppdatert subscription key, oppgi den slik at den kan verifiseres direkte mot Demo-API-et (`POST /salesorders`) før den settes i `.env.development`.
+3. Relevante filer å gå videre med:
+   - `app/services/power_office_client.rb`, klienten som snakker med PowerOffice.
+   - `app/jobs/power_office_invoice_sync_job.rb`, jobben som oppretter kunde og fakturautkast, og sender faktura når `POWEROFFICE_INVOICE_SEND_ENABLED=true`.
+   - `test/services/power_office_client_test.rb` og `test/jobs/power_office_invoice_sync_job_test.rb`, eksisterende tester som må fortsatt være grønne.
+4. Når skriving fungerer i Demo: fjern eventuelle midlertidige diagnostikk-skript, sett `POWEROFFICE_INVOICE_SEND_ENABLED=true` lokalt, kjør en komplett bedriftsregistrering i appen og bekreft i GoDemo-portalen at fakturautkastet blir en faktisk sendt faktura.
+5. Oppdater denne filen med resultatet og fjern punktene under "Videre steg" etter hvert som de er løst.

@@ -9,9 +9,33 @@
 
 ## Kjent blokkering: fakturautsending
 
-Tilgangstokenet for testklienten inneholder claimet `"goAllowSendInvoice": "False"`. I praksis betyr dette at alle forsøk på å opprette eller sende fakturaer via API (`POST /salesorders`, `POST /OutgoingInvoice`, `POST /OutgoingInvoice/SendInvoice`, i alle store/små bokstav-varianter) svarer `404 Resource not found`, uansett om ressursen er dokumentert offentlig eller ikke. Dette gjelder også lesing av `/OutgoingInvoice/List`, så blokkeringen ser ut til å gjelde hele fakturaressursen, ikke bare selve utsendingen.
+Tilgangstokenet for testklienten inneholder claimet `"goAllowSendInvoice": "False"`. Presis diagnostisert oppførsel (bekreftet med ekte kall mot Demo-miljøet 2026-09-29):
 
-**Nødvendig handling:** Kontakt PowerOffice support/partneransvarlig og be om at fakturarettigheter (`OutgoingInvoice`/`SalesOrders`) aktiveres for testklienten "Rovde Industripark AS - API Test Client" i Go Demo. Produksjonsnøkler bør bestilles med fakturarettigheter inkludert fra start.
+| Kall | Resultat |
+| --- | --- |
+| `POST /customers` (opprette kunde) | Fungerer, `201`. |
+| `PATCH /customers/{id}` (JSON Patch) | Fungerer, `200`. |
+| `POST /products` (opprette produkt) | Fungerer, `201`. |
+| `GET /salesorders`, `GET /salesorders/{id}` | Fungerer, `200`. |
+| `PATCH /salesorders/{id}` (JSON Patch på eksisterende utkast) | Fungerer, `200`, men kun for felter som faktisk finnes i patch-skjemaet (f.eks. `CustomerId`). |
+| `POST /salesorders` (opprette nytt utkast) | Blokkert, `404 Resource not found`. |
+| `POST /salesorders/{id}/invoice` (fakturere et utkast) | Blokkert, `404 Resource not found`. |
+| `PUT /salesorders/{id}` | Blokkert, `404 Resource not found`. |
+| Offisiell `POST /OutgoingInvoice` / `POST /OutgoingInvoice/SendInvoice` (PascalCase, nyere API) | Blokkert, `404`, uansett store/små bokstaver. |
+
+De blokkerte kallene returnerer et generisk gateway-svar (`{"statusCode":404,"message":"Resource not found"}`), mens ekte applikasjonsfeil (f.eks. ukjent ressurs-ID) returnerer et annet, mer beskrivende format (`"title":"Object(s) not found"`). Dette viser at blokkeringen skjer på API-abonnementnivå (Ocp-Apim), før forespørselen når selve PowerOffice-applikasjonen, ikke på grunn av feil i request-body eller feil path.
+
+**Viktig funn: rollene i selve tokenet tillater skriving.** Access-tokenet ble dekodet og inneholder `role` claims med `SalesOrders_Full: true`, `OutgoingInvoice_Full: true` og `OutgoingInvoiceVoucher_Full: true`, altså har applikasjonen (styrt av `application_key`/`client_key`) offisielt lov til å skrive salgsordre og fakturaer. Samtidig står `goAllowSendInvoice: False` i samme token. Kombinasjonen av full skriverolle i JWT-et og generisk `404` fra gatewayen (ikke en `403 Forbidden` eller en rolle-spesifikk feil) peker mot at blokkeringen ligger på **abonnementsnøkkelnivå** (`Ocp-Apim-Subscription-Key`), ikke i applikasjonens roller. Sannsynligvis er `POWEROFFICE_SUBSCRIPTION_KEY` koblet til et begrenset API-produkt/abonnement i PowerOffice sin gateway som ikke eksponerer skriveoperasjonene for `SalesOrders`/`OutgoingInvoice`, uavhengig av at rollene tillater det.
+
+**Konklusjon:** Testklienten kan opprette og oppdatere kunder og produkter, og kan lese/redigere eksisterende salgsordre-utkast, men kan ikke opprette nye salgsordrer/fakturaer eller sende dem via API. Dette henger sammen med `goAllowSendInvoice: False`, men ser ut til å være en begrensning på abonnementsnøkkelen/API-produktet, ikke bare et enkelt flagg som kan slås på.
+
+**Nødvendig handling:** Kontakt PowerOffice support/partneransvarlig og be spesifikt om følgende, i prioritert rekkefølge:
+
+1. Bekreft om `POWEROFFICE_SUBSCRIPTION_KEY` er knyttet til riktig API-produkt/abonnement med skrivetilgang for `SalesOrders` og `OutgoingInvoice`. Be om en ny/oppdatert subscription key hvis nåværende viser seg å være feilkonfigurert eller begrenset til lesetilgang.
+2. Be dem verifisere at `goAllowSendInvoice` kan settes til `True` for klienten, selv om rollene i tokenet allerede sier `Full`.
+3. Be om at `POST /salesorders`, `POST /salesorders/{id}/invoice` (eller de nyere `POST /OutgoingInvoice`-endepunktene) faktisk testes fra deres side før dere sender ny nøkkel tilbake.
+
+Produksjonsnøkler bør bestilles med disse rettighetene bekreftet fra start, ikke som en driftsfeil å rette i etterkant.
 
 ## Nåværende oppførsel i appen
 

@@ -169,6 +169,21 @@ fly postgres connect -a rovde-lager-db
 
 ## Fase 3, PowerOffice
 
-PowerOffice er ikke en del av dagens deploy. Når integrasjonen bygges, skal egne secrets og en separat ende-til-ende-testplan legges til her før produksjonssetting.
+PowerOffice er ikke en del av dagens deploy og bygges i branchen `power-office-integrasjon`. Se [POWEROFFICE_STATUS.md](POWEROFFICE_STATUS.md) for gjeldende status, den kjente blokkeringen på fakturarettigheter i Demo-miljøet og gjenstående steg.
+
+Når integrasjonen er verifisert i test, sett følgende som Fly-secrets (aldri i `.env`-filer eller git):
+
+```bash
+fly secrets set \
+  POWEROFFICE_APPLICATION_KEY=<produksjons-application-key> \
+  POWEROFFICE_CLIENT_KEY=<produksjons-client-key> \
+  POWEROFFICE_SUBSCRIPTION_KEY=<produksjons-subscription-key> \
+  POWEROFFICE_TOKEN_URL=https://goapi.poweroffice.net/OAuth/Token \
+  POWEROFFICE_BASE_URL=https://goapi.poweroffice.net/v2 \
+  POWEROFFICE_INVOICE_SEND_ENABLED=true \
+  --app rovde-lager
+```
+
+Gjennomfør en ende-til-ende-test med én bedriftsfaktura før PowerOffice-utsending erstatter vår egen PDF-faktura.
 
 Se også [README.md](README.md), [VIPPS_STATUS.md](VIPPS_STATUS.md) og [SQL.md](SQL.md).

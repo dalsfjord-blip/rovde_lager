@@ -14,5 +14,7 @@ class InvoiceDeliveryJob < ApplicationJob
       receipt ? InvoiceMailer.paid_receipt(agreement).deliver_now : InvoiceMailer.invoice(agreement).deliver_now
       agreement.update!(receipt ? { receipt_sent_at: Time.current } : { payment_status: "invoice_sent", invoice_sent_at: Time.current })
     end
+
+    PowerOfficeInvoiceSyncJob.perform_later(agreement.id) if !receipt && PowerOfficeClient.new.configured?
   end
 end

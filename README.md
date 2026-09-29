@@ -93,15 +93,17 @@ Lokal disk lagrer filer under `storage/`. Produksjon trenger varig objektlagring
 - Sett opp varig lagring og backup for opplastede bilder.
 - Kjør ende-til-ende-test for Vipps, avbrudd, gjentatte webhooks og faktura.
 
-### Fase 3, valgfri PowerOffice-integrasjon
+### Fase 3, PowerOffice-integrasjon (under arbeid)
 
-PowerOffice er ikke integrert i dagens løsning. En senere fase kan omfatte:
+PowerOffice-synkronisering bygges i branchen `power-office-integrasjon` og er ikke slått på i produksjon. Fremdrift:
 
-1. Opprettelse av kunder og fakturaer i PowerOffice.
-2. Synkronisering av faktura- og betalingsstatus.
-3. Feilhåndtering, gjenkjøring og revisjonsspor for synkronisering.
+1. Opprettelse av kunder og fakturaer i PowerOffice, `PowerOfficeClient` og `PowerOfficeInvoiceSyncJob` opprettet.
+2. Synkronisering av faktura- og betalingsstatus, ikke startet ennå.
+3. Feilhåndtering, gjenkjøring og revisjonsspor for synkronisering, løst med `PowerOfficeSyncLog` og status-felter på avtalen.
 
-Denne fasen må utformes mot gjeldende PowerOffice-API og bør ikke endre dagens manuelle fakturaflyt før synkronisering er robust og testet.
+`PowerOfficeInvoiceSyncJob` kjøres automatisk etter at `InvoiceDeliveryJob` har sendt fakturaen til bedriftskunden, og oppretter kunde og fakturautkast i PowerOffice Go. Selve utsendingen (`OutgoingInvoice/SendInvoice`) er lagt bak `POWEROFFICE_INVOICE_SEND_ENABLED` (av som standard) fordi PowerOffice-testklienten foreløpig mangler rettighet til å sende faktura (`goAllowSendInvoice: false` i tilgangstokenet). Se [POWEROFFICE_STATUS.md](POWEROFFICE_STATUS.md) for detaljer og videre steg.
+
+Vår egen PDF-faktura og e-postutsending fortsetter uendret til PowerOffice-utsendingen er verifisert og slått på.
 
 ## Kvalitetssjekker
 
@@ -116,3 +118,4 @@ bundle exec brakeman --no-pager
 - [DEPLOYMENT.md](DEPLOYMENT.md), produksjonsoppsett og sikker drift.
 - [SQL.md](SQL.md), databaseoversikt og driftsqueryer.
 - [VIPPS_STATUS.md](VIPPS_STATUS.md), Vipps-sjekkliste for Sandbox og produksjon.
+- [POWEROFFICE_STATUS.md](POWEROFFICE_STATUS.md), status og videre steg for PowerOffice-integrasjonen.

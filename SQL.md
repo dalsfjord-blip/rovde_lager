@@ -29,13 +29,13 @@ Hovedtabell som inneholder all informasjon om kundens leieavtale.
 | `billing_company_name` | string | Firmanavn for fakturering |
 | `billing_organization_number` | string | Organisasjonsnummer (9 siffer) |
 | **Power Office integrasjon** | | |
-| `power_office_customer_id` | string | Kunde-ID i Power Office |
-| `power_office_sales_order_id` | string | Salgsordre-ID i Power Office |
-| `power_office_invoice_id` | string | Faktura-ID i Power Office |
-| `power_office_invoice_number` | string | Fakturanummer fra Power Office |
-| `invoice_sync_status` | string | Synkroniseringsstatus til Power Office |
-| `invoice_sync_error` | string | Feilmelding ved synkronisering |
-| `invoice_synced_at` | datetime | Tidspunkt for siste synkronisering |
+| `power_office_customer_id` | string | Kundenummer i PowerOffice |
+| `power_office_sales_order_id` | string | Fakturautkast-ID i PowerOffice |
+| `power_office_invoice_id` | string | Faktura-ID i PowerOffice etter utsending |
+| `power_office_invoice_number` | string | Fakturanummer fra PowerOffice |
+| `power_office_sync_status` | string | Synkroniseringsstatus (`processing`, `invoice_drafted`, `synced`, `failed`) |
+| `power_office_sync_error` | text | Feilmelding ved siste mislykkede synkronisering |
+| `power_office_synced_at` | datetime | Tidspunkt fakturaen ble sendt i PowerOffice |
 | **Tidsstempler** | | |
 | `created_at` | datetime | Opprettelsestidspunkt |
 | `updated_at` | datetime | Sist oppdatert |
@@ -78,6 +78,26 @@ Bilder/vedlegg knyttet til leieavtaler.
 | `created_at` | datetime | Opprettelsestidspunkt |
 
 **Relasjon:** En leieavtale kan ha opptil 10 bilder (`has_many_attached :photos`)
+
+---
+
+### power_office_sync_logs (Revisjonsspor for PowerOffice)
+
+Ett rad per steg i synkroniseringen mot PowerOffice, brukt til feilsøking og revisjon.
+
+**Tabell:** `power_office_sync_logs`
+
+| Kolonne | Type | Beskrivelse |
+|---------|------|-------------|
+| `id` | bigint | Primærnøkkel |
+| `rental_agreement_id` | bigint | Fremmednøkkel til rental_agreements |
+| `step` | string | `customer`, `invoice_draft`, `send_invoice` eller `sync` (feil) |
+| `status` | string | `success`, `skipped` eller `failed` |
+| `detail` | text | Menneskelesbar detalj, f.eks. PowerOffice-ID eller feilmelding |
+| `created_at` | datetime | Tidspunkt for forsøket |
+| `updated_at` | datetime | Sist oppdatert |
+
+**Relasjon:** En leieavtale kan ha mange synkroniseringslogger (`has_many :power_office_sync_logs`)
 
 ---
 

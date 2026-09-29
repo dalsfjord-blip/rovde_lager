@@ -4,6 +4,7 @@ class RentalAgreement < ApplicationRecord
   has_many :storage_items, dependent: :destroy
   accepts_nested_attributes_for :storage_items, allow_destroy: true
   has_many_attached :photos
+  has_many :power_office_sync_logs, dependent: :destroy
 
   before_validation :normalize_billing_organization_number
   after_create :generate_reference_number

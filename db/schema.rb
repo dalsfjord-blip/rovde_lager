@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_073632) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,6 +50,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_100000) do
     t.index ["name"], name: "index_document_number_sequences_on_name", unique: true
   end
 
+  create_table "power_office_sync_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "detail"
+    t.bigint "rental_agreement_id", null: false
+    t.string "status"
+    t.string "step"
+    t.datetime "updated_at", null: false
+    t.index ["rental_agreement_id"], name: "index_power_office_sync_logs_on_rental_agreement_id"
+  end
+
   create_table "rental_agreements", force: :cascade do |t|
     t.string "billing_company_name"
     t.string "billing_email"
@@ -67,6 +77,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_100000) do
     t.string "payment_method"
     t.string "payment_status"
     t.date "pickup_date"
+    t.string "power_office_customer_id"
+    t.string "power_office_invoice_id"
+    t.string "power_office_invoice_number"
+    t.string "power_office_sales_order_id"
+    t.text "power_office_sync_error"
+    t.string "power_office_sync_status"
+    t.datetime "power_office_synced_at"
     t.datetime "receipt_sent_at"
     t.string "reference_number"
     t.boolean "send_email_copy"
@@ -81,6 +98,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_100000) do
     t.text "vipps_payment_url"
     t.string "vipps_reference"
     t.index ["invoice_number"], name: "index_rental_agreements_on_invoice_number", unique: true
+    t.index ["power_office_invoice_number"], name: "index_rental_agreements_on_power_office_invoice_number", unique: true
     t.index ["vipps_reference"], name: "index_rental_agreements_on_vipps_reference", unique: true
   end
 
@@ -96,5 +114,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_100000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "power_office_sync_logs", "rental_agreements"
   add_foreign_key "storage_items", "rental_agreements"
 end

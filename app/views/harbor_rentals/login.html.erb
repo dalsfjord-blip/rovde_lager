@@ -1,0 +1,18 @@
+<% content_for :title, "Hamneleige | Rovde Industripark" %>
+
+<section class="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 py-12">
+  <%= image_tag "main_img.png", alt: "Rovde Industripark", class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
+  <div class="absolute inset-0 -z-10 bg-slate-950/70"></div>
+
+  <div class="w-full max-w-xl bg-white p-8 shadow-2xl sm:p-12">
+    <%= link_to "← Til framsida", root_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-950" %>
+    <h1 class="mt-8 text-4xl font-semibold tracking-tight text-slate-950">Registrer hamneleige</h1>
+    <p class="mt-4 text-lg leading-8 text-slate-600">Logg inn med Vipps for å registrere liggedøgn og få faktura.</p>
+
+    <% if flash[:alert] %>
+      <p class="mt-6 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><%= flash[:alert] %></p>
+    <% end %>
+
+    <%= button_to "Logg inn med Vipps", vipps_login_path, method: :post, form: { data: { turbo: false } }, class: "mt-8 w-full px-6 py-4 text-base font-semibold text-white transition hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2", style: "background-color: #ff5b24;" %>
+  </div>
+</section>

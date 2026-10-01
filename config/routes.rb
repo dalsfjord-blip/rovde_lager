@@ -13,6 +13,13 @@ Rails.application.routes.draw do
   get "login", to: "sessions#new", as: :login
   post "sessions", to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
+  post "auth/vipps", to: "sessions#vipps_login", as: :vipps_login
+  get "auth/vipps/callback", to: "sessions#vipps_callback", as: :vipps_callback
+  get "auth/failure", to: "sessions#failure", as: :vipps_failure
+
+  # Harbor rental
+  get "hamneleige/login", to: "harbor_rentals#login", as: :harbor_rental_login
+  resource :harbor_rental, path: "hamneleige", only: [ :show, :create ]
 
   # Main app routes
   resources :storage_items, only: [ :index, :create ] do
@@ -40,5 +47,5 @@ Rails.application.routes.draw do
   post "webhooks/vipps", to: "vipps_webhooks#receive"
 
   # Root path
-  root "storage_items#index"
+  root "landing#show"
 end

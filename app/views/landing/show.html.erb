@@ -1,0 +1,17 @@
+<% content_for :title, "Rovde Industripark" %>
+
+<section class="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 py-12">
+  <%= image_tag "main_img.png", alt: "Rovde Industripark", class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
+  <div class="absolute inset-0 -z-10 bg-slate-950/55"></div>
+
+  <div class="w-full max-w-5xl text-center text-white">
+    <nav aria-label="Hovudmeny" class="mb-16 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+      <%= link_to "Vinterlagring", storage_items_path(new: true), class: "min-w-48 border border-white/75 px-7 py-3 text-sm font-semibold uppercase tracking-[0.18em] transition hover:bg-white hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950" %>
+      <%= link_to "Hamneleige", harbor_rental_login_path, class: "min-w-48 border border-white/75 px-7 py-3 text-sm font-semibold uppercase tracking-[0.18em] transition hover:bg-white hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950" %>
+    </nav>
+
+    <h1 class="text-4xl font-semibold leading-tight tracking-tight text-balance sm:text-5xl md:text-7xl">
+      Rovde Industripark<span class="block">Gammal og ny industrihistorie på Rovde.</span>
+    </h1>
+  </div>
+</section>

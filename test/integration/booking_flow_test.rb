@@ -1,6 +1,44 @@
 require "test_helper"
 
 class BookingFlowTest < ActionDispatch::IntegrationTest
+  test "shows the public landing page" do
+    get root_path
+
+    assert_response :success
+    assert_select "h1", "Rovde IndustriparkGammal og ny industrihistorie på Rovde."
+    assert_select "a[href='#{storage_items_path(new: true)}']", text: "Vinterlagring"
+    assert_select "a[href='#{harbor_rental_login_path}']", text: "Hamneleige"
+    assert_select "img[src*='main_img']"
+  end
+
+  test "shows the Vipps Login form for harbor rental" do
+    get harbor_rental_login_path
+
+    assert_response :success
+    assert_select "h1", "Registrer hamneleige"
+    assert_select "form[action='#{vipps_login_path}'][method='post']"
+  end
+
+  test "requires Vipps Login before accessing harbor rental" do
+    get harbor_rental_path
+
+    assert_redirected_to harbor_rental_login_path
+  end
+
+  test "handles unavailable Vipps Login configuration" do
+    post vipps_login_path
+
+    assert_redirected_to harbor_rental_login_path
+    follow_redirect!
+    assert_includes response.body, "Vipps Login er ikkje konfigurert enno."
+  end
+
+  test "handles an interrupted Vipps Login" do
+    get vipps_failure_path
+
+    assert_redirected_to harbor_rental_login_path
+  end
+
   test "requires login before accessing registration" do
     get storage_items_path
 

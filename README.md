@@ -14,6 +14,20 @@ Rails-applikasjon for nettbrettbasert registrering og sesonglagring av kjøretø
 - Vipps QR-panel på nettbrettet med automatisk lukking ved fullført, avbrutt eller feilet betaling.
 - Signaturverifiserte Vipps-webhooks, idempotent capture og betaling først etter `CAPTURED`.
 - PDF-faktura og PDF-kvittering med MVA-spesifikasjon. Kvittering for Vipps-betaling sendes bare etter bekreftet capture.
+- Hamneleige med Vipps Login, døgnregistrering og PDF-faktura på 1 500 kr per døgn ekskl. MVA.
+
+## Hamneleige
+
+Hamneleige er tilgjengelig fra framsida på `/hamneleige/login`. Kunden logger inn med Vipps Login før de kan registrere ett eller flere liggedøgn og be om faktura. Fakturaen beregnes med 1 500 kr ekskl. MVA per døgn, 25 % MVA og minst ett døgn.
+
+Vipps Login bruker de eksisterende `VIPPS_CLIENT_ID`- og `VIPPS_CLIENT_SECRET`-verdiene. Produksjonsklienten må være aktivert for Vipps Login, og callback-URL-en må være registrert hos Vipps før flyten kan brukes.
+
+```text
+VIPPS_BASE_URL=https://api.vipps.no
+VIPPS_LOGIN_REDIRECT_URI=https://<domene>/auth/vipps/callback
+```
+
+Lokal testing bruker `VIPPS_LOGIN_REDIRECT_URI=http://localhost:3000/auth/vipps/callback`. Vipps må også godkjenne denne callback-URL-en for klienten. Mens godkjenning mangler, vil Vipps svare med en klientfeil etter redirecten.
 
 ## Betalingsflyt
 

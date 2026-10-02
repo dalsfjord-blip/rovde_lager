@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_091000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,6 +54,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_091000) do
     t.string "billing_company_name", null: false
     t.string "billing_email", null: false
     t.string "billing_organization_number", null: false
+    t.text "comments"
     t.datetime "created_at", null: false
     t.integer "days", null: false
     t.date "invoice_due_date"

@@ -23,9 +23,9 @@ class CustomerInfoController < ApplicationController
 
   def set_pickup_dates
     @pickup_dates = [
-      { id: "2026-04-01", label: "01. april" },
-      { id: "2026-04-30", label: "30. april" },
-      { id: "2026-03-19", label: "19. mars kl. 18:00" }
+      { id: "2026-03-19", label: "19. mars kl. 18:00" },
+      { id: "2026-03-29", label: "29. mars kl. 18:00" },
+      { id: "2026-04-01", label: "1. april kl. 18:00" }
     ]
   end
 

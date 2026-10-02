@@ -17,7 +17,7 @@ class HarborRental < ApplicationRecord
   validates :invoice_number, :reference_number, uniqueness: true, allow_nil: true
 
   def self.next_invoice_number
-    "#{next_document_number("invoice")}-ROLAG"
+    "#{next_document_number("harbor_invoice")}-ROHAMN"
   end
 
   def net_price

@@ -11,7 +11,7 @@ class HarborRentalsController < ApplicationController
   end
 
   def show
-    @harbor_rental = current_user.harbor_rentals.build(billing_attributes)
+    @harbor_rental = current_user.harbor_rentals.build
   end
 
   def create
@@ -38,19 +38,13 @@ class HarborRentalsController < ApplicationController
     redirect_to harbor_rental_login_path, alert: "Logg inn med Vipps for å registrere hamneleige."
   end
 
-  def billing_attributes
-    {
-      billing_company_name: current_user.name,
-      billing_email: current_user.email
-    }
-  end
-
   def harbor_rental_params
     params.require(:harbor_rental).permit(
       :days,
       :billing_company_name,
       :billing_organization_number,
-      :billing_email
+      :billing_email,
+      :comments
     )
   end
 end

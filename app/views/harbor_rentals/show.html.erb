@@ -35,20 +35,83 @@
       <div class="grid gap-5 sm:grid-cols-2">
         <div>
           <%= form.label :billing_company_name, "Namn på fakturamottakar", class: "mb-1 block text-sm font-semibold text-slate-700" %>
-          <%= form.text_field :billing_company_name, required: true, class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
+          <%= form.text_field :billing_company_name, id: "billing_company_name", autocomplete: "organization", required: true, class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
+          <div id="brreg_results" class="mt-1 space-y-1"></div>
         </div>
         <div>
           <%= form.label :billing_organization_number, "Organisasjonsnummer", class: "mb-1 block text-sm font-semibold text-slate-700" %>
-          <%= form.text_field :billing_organization_number, required: true, inputmode: "numeric", pattern: "[0-9 ]{9,}", class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
+          <%= form.text_field :billing_organization_number, id: "billing_organization_number", required: true, inputmode: "numeric", pattern: "[0-9 ]{9,}", class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
         </div>
       </div>
 
       <div>
         <%= form.label :billing_email, "Faktura-e-post", class: "mb-1 block text-sm font-semibold text-slate-700" %>
-        <%= form.email_field :billing_email, required: true, class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
+        <%= form.email_field :billing_email, autocomplete: "email", required: true, class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
+      </div>
+
+      <div>
+        <%= form.label :comments, "Kommentar", class: "mb-1 block text-sm font-semibold text-slate-700" %>
+        <%= form.text_area :comments, rows: 4, class: "w-full border border-slate-300 px-3 py-2 text-slate-950 focus:border-slate-950 focus:outline-none" %>
       </div>
 
       <%= form.submit "Send faktura", class: "w-full bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2" %>
     <% end %>
   </div>
 </section>
+
+<%= javascript_tag nonce: true do %>
+  (() => {
+    const billingCompanyName = document.getElementById("billing_company_name");
+    const billingOrganizationNumber = document.getElementById("billing_organization_number");
+    const brregResults = document.getElementById("brreg_results");
+    if (!billingCompanyName || !billingOrganizationNumber || !brregResults || billingCompanyName.dataset.brregInitialized) return;
+
+    billingCompanyName.dataset.brregInitialized = "true";
+
+    const chooseCompany = (company) => {
+      billingCompanyName.value = company.name;
+      billingOrganizationNumber.value = company.organization_number;
+      brregResults.replaceChildren();
+    };
+
+    let searchTimeout;
+    billingCompanyName.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        const name = billingCompanyName.value.trim();
+        if (name.length < 2) return brregResults.replaceChildren();
+
+        try {
+          const response = await fetch(`/api/brreg_lookups?name=${encodeURIComponent(name)}`);
+          if (!response.ok) return brregResults.replaceChildren();
+
+          const companies = await response.json();
+          brregResults.replaceChildren(...companies.map((company) => {
+            const result = document.createElement("button");
+            result.type = "button";
+            result.className = "block w-full border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50";
+            result.textContent = `${company.name} (${company.organization_number})`;
+            result.addEventListener("click", () => chooseCompany(company));
+            return result;
+          }));
+        } catch (_) {
+          brregResults.replaceChildren();
+        }
+      }, 300);
+    });
+
+    billingOrganizationNumber.addEventListener("blur", async () => {
+      const organizationNumber = billingOrganizationNumber.value.replace(/\D/g, "");
+      if (organizationNumber.length !== 9) return;
+
+      try {
+        const response = await fetch(`/api/brreg_lookups/${organizationNumber}`);
+        if (!response.ok) return;
+
+        const company = await response.json();
+        if (!billingCompanyName.value.trim()) billingCompanyName.value = company.name;
+      } catch (_) {
+      }
+    });
+  })();
+<% end %>

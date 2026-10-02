@@ -68,8 +68,9 @@ class SessionsController < ApplicationController
     session.delete(:user_id)
     session.delete(:vipps_payment_url)
     session.delete(:vipps_reference)
+    clear_vipps_login_session
     start_agreement
-    redirect_to login_path, notice: "Logget ut"
+    redirect_to root_path, notice: "Logget ut"
   end
 
   private

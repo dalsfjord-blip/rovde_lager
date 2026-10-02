@@ -25,6 +25,18 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to harbor_rental_login_path
   end
 
+  test "logs out to the landing page and requires Vipps Login for harbor rental" do
+    sign_in
+
+    delete logout_path
+
+    assert_redirected_to root_path
+
+    get harbor_rental_path
+
+    assert_redirected_to harbor_rental_login_path
+  end
+
   test "handles unavailable Vipps Login configuration" do
     post vipps_login_path
 

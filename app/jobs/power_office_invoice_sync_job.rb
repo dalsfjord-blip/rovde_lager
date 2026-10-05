@@ -1,4 +1,7 @@
 class PowerOfficeInvoiceSyncJob < ApplicationJob
+  SERVICE_PRODUCT_CODE = "SESONGLAGRING"
+  SERVICE_PRODUCT_NAME = "Sesonglagring"
+
   retry_on Faraday::ConnectionFailed, Faraday::TimeoutError, wait: :polynomially_longer, attempts: 5
 
   def perform(rental_agreement_id, client: PowerOfficeClient.new)
@@ -10,7 +13,7 @@ class PowerOfficeInvoiceSyncJob < ApplicationJob
     agreement.update!(power_office_sync_status: "processing", power_office_sync_error: nil)
 
     create_customer(agreement, client) unless agreement.power_office_customer_id.present?
-    create_invoice(agreement, client) unless agreement.power_office_sales_order_id.present?
+    create_sales_order(agreement, client) unless agreement.power_office_sales_order_id.present?
 
     if invoicing_enabled?
       send_invoice(agreement, client)
@@ -40,27 +43,33 @@ class PowerOfficeInvoiceSyncJob < ApplicationJob
     log(agreement, step: "customer", status: "success", detail: "PowerOffice kundenummer #{agreement.power_office_customer_id}")
   end
 
-  def create_invoice(agreement, client)
-    response = client.create_invoice(
+  def create_sales_order(agreement, client)
+    product_id = client.ensure_service_product!(code: SERVICE_PRODUCT_CODE, name: SERVICE_PRODUCT_NAME)
+    response = client.create_sales_order(
       customer_number: agreement.power_office_customer_id,
-      description: "Sesonglagring #{agreement.reference_number}",
-      unit_price: agreement.net_price,
-      reference: agreement.reference_number
+      reference: agreement.reference_number,
+      lines: [
+        {
+          ProductId: product_id,
+          Description: "Sesonglagring #{agreement.reference_number}",
+          Quantity: 1,
+          ProductUnitPrice: agreement.net_price
+        }
+      ]
     )
     agreement.update!(power_office_sales_order_id: response_id(response))
     log(agreement, step: "invoice_draft", status: "success", detail: "PowerOffice fakturautkast-ID #{agreement.power_office_sales_order_id}")
   end
 
   def send_invoice(agreement, client)
-    response = client.send_invoice(invoice_id: agreement.power_office_sales_order_id, email: agreement.billing_email)
-    agreement.update!(
-      power_office_invoice_id: response_id(response) || agreement.power_office_sales_order_id,
-      power_office_invoice_number: response["InvoiceNo"] || response["invoiceNo"],
-      power_office_sync_status: "synced",
-      power_office_sync_error: nil,
-      power_office_synced_at: Time.current
+    client.create_and_send_invoice(
+      sales_order_id: agreement.power_office_sales_order_id,
+      delivery_type: "Auto",
+      email: agreement.billing_email
     )
-    log(agreement, step: "send_invoice", status: "success", detail: "PowerOffice InvoiceId #{agreement.power_office_invoice_id}")
+    agreement.update!(power_office_sync_status: "sending")
+    log(agreement, step: "send_invoice", status: "queued", detail: "PowerOffice har satt fakturaen i sendekø (202 Accepted). Venter på bekreftelse.")
+    PowerOfficeInvoiceSentStateJob.perform_later(agreement.id)
   end
 
   def customer_number(response)

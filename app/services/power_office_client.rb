@@ -12,6 +12,7 @@ class PowerOfficeClient
   end
 
   OUTGOING_VAT_CODE_25_PERCENT = "3"
+  SALES_ACCOUNT_RANGE = "3000-3999"
 
   def initialize(connection: nil)
     @connection = connection
@@ -29,37 +30,80 @@ class PowerOfficeClient
   # Offisiell PowerOffice Go API v2 kaller bedriftskunden "Customer" og bruker
   # feltnavnene Name/OrganizationNumber/EmailAddress (bekreftet mot Demo-miljøet).
   def create_customer(name:, organization_number:, email:)
-    post("customers", {
+    post("Customers", {
       Name: name,
       OrganizationNumber: organization_number,
       EmailAddress: email
     })
   end
 
-  # Oppretter et fakturautkast ("OutgoingInvoice" i PowerOffice Go API v2).
-  # customer_number skal være kundens "Number" fra create_customer-responsen,
-  # ikke Id-en.
-  def create_invoice(customer_number:, description:, unit_price:, reference:, vat_code: OUTGOING_VAT_CODE_25_PERCENT)
-    post("OutgoingInvoice", {
-      CustomerCode: customer_number,
-      CustomerReference: reference,
-      ExternalImportReference: reference,
-      OutgoingInvoiceLines: [
-        {
-          Description: description,
-          Quantity: 1,
-          UnitPrice: unit_price,
-          VatCode: vat_code
-        }
-      ]
+  # Finner en eksisterende salgskonto (3000-3999) med gitt mva-kode, slik at et
+  # produkt kan kobles til riktig mva-behandling ved fakturering.
+  def find_sales_account(vat_code: OUTGOING_VAT_CODE_25_PERCENT, account_range: SALES_ACCOUNT_RANGE)
+    accounts = get("GeneralLedgerAccounts", accountNos: account_range)
+    Array(accounts).find { |account| account["VatCode"] == vat_code }
+  end
+
+  def find_product(code:)
+    products = get("Products", codes: code)
+    Array(products).find { |product| product["Code"] == code }
+  end
+
+  def create_product(code:, name:, sales_account_id:)
+    post("Products", {
+      Code: code,
+      Name: name,
+      StandardSalesAccountId: sales_account_id
     })
   end
 
-  def send_invoice(invoice_id:, email:)
-    post("OutgoingInvoice/SendInvoice", {
-      InvoiceId: invoice_id,
-      Email: email
+  # Finner eller oppretter produktet som representerer tjenesten som faktureres.
+  # Produktet kobles til en eksisterende salgskonto med riktig mva-kode, slik at
+  # salgsordrelinjer som refererer produktet automatisk får riktig mva.
+  def ensure_service_product!(code:, name:, vat_code: OUTGOING_VAT_CODE_25_PERCENT)
+    existing = find_product(code: code)
+    return existing["Id"] if existing
+
+    sales_account = find_sales_account(vat_code: vat_code)
+    unless sales_account
+      raise ConfigurationError, "Fant ingen salgskonto (#{SALES_ACCOUNT_RANGE}) med mva-kode #{vat_code} i PowerOffice-kontoplanen"
+    end
+
+    created = create_product(code: code, name: name, sales_account_id: sales_account["Id"])
+    created["Id"]
+  end
+
+  # Oppretter en salgsordre (fakturautkast) komplett med linjer i PowerOffice Go API v2.
+  # customer_number skal være kundens "Number" fra create_customer-responsen, ikke Id-en.
+  def create_sales_order(customer_number:, reference:, lines:)
+    post("SalesOrders/Complete", {
+      CustomerNo: customer_number,
+      CustomerReference: reference,
+      ExternalImportReference: reference,
+      SalesOrderLines: lines
     })
+  end
+
+  # Omdanner salgsordren til en faktura og sender den. Returnerer 202 Accepted
+  # ved vellykket kø-plassering; selve sendingen skjer asynkront i PowerOffice
+  # og må følges opp med sent_state.
+  def create_and_send_invoice(sales_order_id:, delivery_type: "Auto", email: nil, voucher_date: nil)
+    payload = { DeliveryType: delivery_type }
+    payload[:EmailAddress] = email if email.present?
+    payload[:VoucherDate] = voucher_date if voucher_date.present?
+
+    post("SalesOrders/#{sales_order_id}/CreateAndSendInvoice", payload)
+  end
+
+  # Poller status på en salgsordre som er under fakturering/sending.
+  def sent_state(sales_order_id:)
+    get("SalesOrders/SentState", id: sales_order_id)
+  end
+
+  # Diagnostikk: lister hvilke rettigheter/moduler integrasjonen faktisk har hos klienten.
+  # Krever ingen egen tilgang, kun gyldig token.
+  def client_integration_information
+    get("ClientIntegrationInformation")
   end
 
   private
@@ -71,6 +115,16 @@ class PowerOfficeClient
       request.headers["Ocp-Apim-Subscription-Key"] = @subscription_key
       request.headers["Content-Type"] = "application/json"
       request.body = payload.to_json
+    end
+    parse_response(response)
+  end
+
+  def get(path, params = {})
+    ensure_configured!
+    response = connection.get("#{@base_url}/#{path}") do |request|
+      request.headers["Authorization"] = "Bearer #{access_token}"
+      request.headers["Ocp-Apim-Subscription-Key"] = @subscription_key
+      request.params.update(params) if params.present?
     end
     parse_response(response)
   end

@@ -1,12 +1,15 @@
 require "test_helper"
 
 class PowerOfficeInvoiceSyncJobTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   class FakeClient
     attr_reader :calls
 
-    def initialize(customer_response: { "Id" => "customer-1", "Number" => 10024 }, invoice_response: { "Id" => "invoice-draft-1" }, send_response: { "Id" => "invoice-1", "InvoiceNo" => "42" })
+    def initialize(customer_response: { "Id" => "customer-1", "Number" => 10024 }, product_id: 555, sales_order_response: { "Id" => "sales-order-1" }, send_response: { "Id" => "sales-order-1" })
       @customer_response = customer_response
-      @invoice_response = invoice_response
+      @product_id = product_id
+      @sales_order_response = sales_order_response
       @send_response = send_response
       @calls = []
     end
@@ -16,13 +19,18 @@ class PowerOfficeInvoiceSyncJobTest < ActiveSupport::TestCase
       @customer_response
     end
 
-    def create_invoice(**args)
-      @calls << [ :create_invoice, args ]
-      @invoice_response
+    def ensure_service_product!(**args)
+      @calls << [ :ensure_service_product!, args ]
+      @product_id
     end
 
-    def send_invoice(**args)
-      @calls << [ :send_invoice, args ]
+    def create_sales_order(**args)
+      @calls << [ :create_sales_order, args ]
+      @sales_order_response
+    end
+
+    def create_and_send_invoice(**args)
+      @calls << [ :create_and_send_invoice, args ]
       @send_response
     end
   end
@@ -46,7 +54,7 @@ class PowerOfficeInvoiceSyncJobTest < ActiveSupport::TestCase
     )
   end
 
-  test "creates customer and invoice draft, then waits for sending to be enabled" do
+  test "creates customer and sales order draft, then waits for sending to be enabled" do
     ENV["POWEROFFICE_INVOICE_SEND_ENABLED"] = "false"
     agreement = build_agreement
     client = FakeClient.new
@@ -55,27 +63,28 @@ class PowerOfficeInvoiceSyncJobTest < ActiveSupport::TestCase
 
     agreement.reload
     assert_equal "10024", agreement.power_office_customer_id
-    assert_equal "invoice-draft-1", agreement.power_office_sales_order_id
+    assert_equal "sales-order-1", agreement.power_office_sales_order_id
     assert_nil agreement.power_office_invoice_id
     assert_equal "invoice_drafted", agreement.power_office_sync_status
-    assert_equal %i[create_customer create_invoice], client.calls.map(&:first)
+    assert_equal %i[create_customer ensure_service_product! create_sales_order], client.calls.map(&:first)
     assert_equal 3, agreement.power_office_sync_logs.count
   ensure
     ENV.delete("POWEROFFICE_INVOICE_SEND_ENABLED")
   end
 
-  test "sends the invoice when sending is enabled" do
+  test "requests create and send, then marks the agreement as sending while polling" do
     ENV["POWEROFFICE_INVOICE_SEND_ENABLED"] = "true"
     agreement = build_agreement
     client = FakeClient.new
 
-    PowerOfficeInvoiceSyncJob.perform_now(agreement.id, client: client)
+    assert_enqueued_with(job: PowerOfficeInvoiceSentStateJob, args: [ agreement.id ]) do
+      PowerOfficeInvoiceSyncJob.perform_now(agreement.id, client: client)
+    end
 
     agreement.reload
-    assert_equal "invoice-1", agreement.power_office_invoice_id
-    assert_equal "42", agreement.power_office_invoice_number
-    assert_equal "synced", agreement.power_office_sync_status
-    assert agreement.power_office_synced_at.present?
+    assert_equal "sending", agreement.power_office_sync_status
+    assert_nil agreement.power_office_invoice_id
+    assert_includes client.calls.map(&:first), :create_and_send_invoice
   ensure
     ENV.delete("POWEROFFICE_INVOICE_SEND_ENABLED")
   end
@@ -100,10 +109,10 @@ class PowerOfficeInvoiceSyncJobTest < ActiveSupport::TestCase
     assert_nil agreement.reload.power_office_sync_status
   end
 
-  test "marks the agreement as failed when PowerOffice rejects the invoice draft" do
+  test "marks the agreement as failed when PowerOffice rejects the sales order draft" do
     agreement = build_agreement
     client = FakeClient.new
-    def client.create_invoice(**)
+    def client.create_sales_order(**)
       raise PowerOfficeClient::RequestError.new(status: 404, retryable: false, detail: "Resource not found")
     end
 

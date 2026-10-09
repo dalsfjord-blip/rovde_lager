@@ -28,10 +28,10 @@ Vipps Login bruker `VIPPS_LOGIN_CLIENT_ID` og `VIPPS_LOGIN_CLIENT_SECRET`. Produ
 VIPPS_LOGIN_CLIENT_ID=<vipps-login-client-id>
 VIPPS_LOGIN_CLIENT_SECRET=<vipps-login-client-secret>
 VIPPS_LOGIN_BASE_URL=https://api.vipps.no
-VIPPS_LOGIN_REDIRECT_URI=https://<domene>/auth/vipps/callback
+VIPPS_LOGIN_REDIRECT_URI=https://rovdeindustripark.app/auth/vipps/callback
 ```
 
-Lokal testing bruker `VIPPS_LOGIN_REDIRECT_URI=http://localhost:3000/auth/vipps/callback`. Vipps må også godkjenne denne callback-URL-en for klienten. Mens godkjenning mangler, vil Vipps svare med en klientfeil etter redirecten.
+Produksjonsappen er tilgjengelig på `https://rovdeindustripark.app`. Vipps Login må bruke callback-URL-en over. Lokal testing bruker `VIPPS_LOGIN_REDIRECT_URI=http://localhost:3000/auth/vipps/callback`. Vipps må også godkjenne denne callback-URL-en for klienten. Mens godkjenning mangler, vil Vipps svare med en klientfeil etter redirecten.
 
 ## Betalingsflyt
 

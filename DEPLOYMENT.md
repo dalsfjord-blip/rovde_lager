@@ -172,3 +172,10 @@ fly postgres connect -a rovde-lager-db
 PowerOffice er ikke en del av dagens deploy. Når integrasjonen bygges, skal egne secrets og en separat ende-til-ende-testplan legges til her før produksjonssetting.
 
 Se også [README.md](README.md), [VIPPS_STATUS.md](VIPPS_STATUS.md) og [SQL.md](SQL.md).
+Ja. Før deploy:
+
+
+• Kjør kvalitetssjekkene i  DEPLOYMENT.md:5-12 .
+• Sørg for at  main_img2.png  er med i committen.
+• Test landingssiden og innlogging i produksjon etter deploy, og følg Fly-loggene.
+• Testene feiler fortsatt kun på en eksisterende tekstforventning i landingssiden.

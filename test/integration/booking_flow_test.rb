@@ -5,7 +5,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "h1", "Rovde IndustriparkGammal og ny industrihistorie på Rovde."
+    assert_select "h1", "Rovde Industripark A/S Gammal og ny industrihistorie på Rovde"
     assert_select "a[href='#{storage_items_path(new: true)}']", text: "Vinterlagring"
     assert_select "a[href='#{harbor_rental_login_path}']", text: "Hamneleige"
     assert_select "img[src*='main_img']"

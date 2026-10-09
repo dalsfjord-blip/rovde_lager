@@ -13,7 +13,9 @@ Denne veiledningen er kilden for deploy, Vipps Sandbox, produksjonshemmeligheter
 
 ## Fly.io-oppsett
 
-`fly.toml` bruker appen `rovde-lager`, region `arn`, HTTPS og ett kjørende program. Release-kommandoen kjører `bin/rails db:prepare`.
+`fly.toml` bruker appen `rovde-lager`, region `arn`, HTTPS og én appmaskin. Appmaskinen stopper når den ikke har trafikk og starter automatisk ved neste HTTP-forespørsel. Release-kommandoen kjører `bin/rails db:prepare`.
+
+Appmaskinen har 1 GB RAM for at Rails, Puma og bildebehandling med libvips skal ha forsvarlig minne. Den er begrenset til 20 samtidige forespørsler som normalt nivå og 25 som maksimalgrense, slik at bildeopplasting ikke overbelaster én delt CPU.
 
 ### Første gang
 

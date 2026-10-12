@@ -1,0 +1,90 @@
+<% content_for :title, "Database | Rovde Lager" %>
+
+<div class="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
+  <div class="mb-8 flex flex-col gap-5 border-b border-slate-300 pb-6 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="text-sm font-semibold text-blue-800">Rovde Industripark</p>
+      <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Registrerte lagringsavtaler</h1>
+      <p class="mt-2 max-w-2xl text-slate-600">Søk opp lagringsobjekt, kundeinformasjon, bilder, hentedato og betalingsstatus.</p>
+    </div>
+    <%= link_to "Ny registrering", storage_items_path(new: true), class: "inline-flex min-h-11 items-center justify-center rounded-md bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800" %>
+  </div>
+
+  <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
+    <%= form_with url: database_records_path, method: :get, class: "flex flex-col gap-3 sm:flex-row sm:items-end" do |form| %>
+      <div class="flex-1">
+        <%= form.label :q, "Søk", class: "mb-1 block text-sm font-semibold text-slate-800" %>
+        <%= form.search_field :q, value: @query, placeholder: "Registreringsnummer eller eiers navn", class: "min-h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950 focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200" %>
+      </div>
+      <div class="flex gap-2">
+        <%= form.submit "Søk", class: "min-h-11 rounded-md bg-slate-900 px-5 font-semibold text-white hover:bg-slate-700" %>
+        <% if @query.present? %>
+          <%= link_to "Nullstill", database_records_path, class: "inline-flex min-h-11 items-center rounded-md border border-slate-300 px-4 font-semibold text-slate-700 hover:bg-slate-100" %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <% if @agreements.any? %>
+    <p class="mt-5 text-sm text-slate-600"><%= pluralize(@agreements.count, "registrering") %> funnet<%= @query.present? ? " for «#{@query}»" : "" %>.</p>
+    <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <table class="w-full min-w-[1050px] border-collapse text-left">
+        <thead class="bg-slate-100 text-sm text-slate-700">
+          <tr>
+            <th class="px-4 py-3 font-semibold">Registrert</th>
+            <th class="px-4 py-3 font-semibold">Lagringsobjekt</th>
+            <th class="px-4 py-3 font-semibold">Kundeinformasjon</th>
+            <th class="px-4 py-3 font-semibold">Bilder</th>
+            <th class="px-4 py-3 font-semibold">Hentedato</th>
+            <th class="px-4 py-3 font-semibold">Betalingsstatus</th>
+            <th class="px-4 py-3 font-semibold"><span class="sr-only">Handlinger</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 text-sm text-slate-800">
+          <% @agreements.each do |agreement| %>
+            <tr class="align-top">
+              <td class="whitespace-nowrap px-4 py-4"><%= l(agreement.created_at.to_date, format: :long) %></td>
+              <td class="px-4 py-4">
+                <p class="font-semibold text-slate-950"><%= agreement.reference_number.presence || "Ikke tildelt" %></p>
+                <% agreement.storage_items.each do |item| %>
+                  <p class="mt-1"><%= item.registration_number.presence || item.description %><%= " · #{item.meters.to_f} m" if item.meters.present? %></p>
+                <% end %>
+              </td>
+              <td class="px-4 py-4">
+                <p class="font-semibold text-slate-950"><%= agreement.customer_name %></p>
+                <p class="mt-1"><%= agreement.customer_phone %></p>
+                <p class="mt-1 break-all text-slate-600"><%= agreement.customer_email %></p>
+              </td>
+              <td class="px-4 py-4">
+                <% if agreement.photos.attached? %>
+                  <div class="flex flex-wrap gap-2">
+                    <% agreement.photos.each do |photo| %>
+                      <%= link_to rails_blob_path(photo, disposition: "inline"), target: "_blank", rel: "noopener", class: "block" do %>
+                        <%= image_tag photo, alt: "Bilde av #{agreement.reference_number}", class: "h-16 w-16 rounded object-cover ring-1 ring-slate-300" %>
+                      <% end %>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="text-slate-500">Ingen bilder</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-4"><%= agreement.pickup_date ? l(agreement.pickup_date, format: :long) : "Ikke valgt" %></td>
+              <td class="px-4 py-4">
+                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-800"><%= agreement.payment_status.presence || "Ikke registrert" %></span>
+                <p class="mt-2 text-slate-600"><%= agreement.payment_method.presence || "Ingen betalingsmåte" %></p>
+              </td>
+              <td class="px-4 py-4 text-right">
+                <%= button_to "Slett", database_record_path(agreement, q: @query), method: :delete, data: { turbo_confirm: "Vil du slette registreringen for #{agreement.customer_name}? Dette sletter lagringsobjekt og bilder permanent." }, class: "min-h-10 rounded-md border border-red-300 px-3 font-semibold text-red-700 hover:bg-red-50" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <section class="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
+      <h2 class="text-lg font-bold text-slate-950"><%= @query.present? ? "Ingen registreringer funnet" : "Ingen registreringer ennå" %></h2>
+      <p class="mt-2 text-slate-600"><%= @query.present? ? "Prøv et annet registreringsnummer eller eiers navn." : "Nye lagringsavtaler vises her når de er registrert." %></p>
+    </section>
+  <% end %>
+</div>

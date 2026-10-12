@@ -57,6 +57,38 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
+  test "shows searchable database records and deletes a registration" do
+    agreement = RentalAgreement.create!(
+      customer_name: "Ola Nordmann",
+      customer_phone: "12345678",
+      customer_email: "ola@example.com",
+      pickup_date: "2026-04-01",
+      contract_approved: true,
+      total_meters: 4.5,
+      total_price: 3150,
+      payment_method: "manual",
+      payment_status: "paid"
+    )
+    agreement.storage_items.create!(registration_number: "AB12345", meters: 4.5)
+
+    sign_in
+    get database_records_path(q: "AB12345")
+
+    assert_response :success
+    assert_select "h1", "Registrerte lagringsavtaler"
+    assert_select "input[name='q'][value='AB12345']"
+    assert_select "p", "Ola Nordmann"
+    assert_select "p", "AB12345 · 4.5 m"
+    assert_includes response.body, "1. april 2026"
+    assert_select "span", "paid"
+    assert_select "form[action='#{database_record_path(agreement, q: "AB12345")}'][method='post']"
+
+    delete database_record_path(agreement, q: "AB12345")
+
+    assert_redirected_to database_records_path(q: "AB12345")
+    assert_not RentalAgreement.exists?(agreement.id)
+  end
+
   test "completes a business registration with an invoice from one form" do
     sign_in
 

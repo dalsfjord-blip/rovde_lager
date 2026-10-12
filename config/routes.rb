@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   resource :harbor_rental, path: "hamneleige", only: [ :show, :create ]
 
   # Main app routes
+  resources :database_records, path: "db", only: [ :index, :destroy ]
+
   resources :storage_items, only: [ :index, :create ] do
     collection do
       post :add_item

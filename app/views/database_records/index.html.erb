@@ -36,6 +36,7 @@
             <th class="px-4 py-3 font-semibold">Kundeinformasjon</th>
             <th class="px-4 py-3 font-semibold">Bilder</th>
             <th class="px-4 py-3 font-semibold">Hentedato</th>
+            <th class="px-4 py-3 font-semibold">Pris (totalsum)</th>
             <th class="px-4 py-3 font-semibold">Betalingsstatus</th>
             <th class="px-4 py-3 font-semibold"><span class="sr-only">Handlinger</span></th>
           </tr>
@@ -69,6 +70,7 @@
                 <% end %>
               </td>
               <td class="px-4 py-4"><%= agreement.pickup_date ? l(agreement.pickup_date, format: :long) : "Ikke valgt" %></td>
+              <td class="px-4 py-4 whitespace-nowrap"><%= number_to_currency(agreement.total_price_with_vat || agreement.total_price || 0) %></td>
               <td class="px-4 py-4">
                 <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-800"><%= agreement.payment_status.presence || "Ikke registrert" %></span>
                 <p class="mt-2 text-slate-600"><%= agreement.payment_method.presence || "Ingen betalingsmåte" %></p>

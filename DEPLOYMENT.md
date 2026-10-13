@@ -181,3 +181,15 @@ Ja. Før deploy:
 • Sørg for at  main_img2.png  er med i committen.
 • Test landingssiden og innlogging i produksjon etter deploy, og følg Fly-loggene.
 • Testene feiler fortsatt kun på en eksisterende tekstforventning i landingssiden.
+
+## Vurdering: delvis klar for deploy
+
+
+
+
+
+ /db  bruker automatisk produksjons-Postgres via  DATABASE_URL  på Fly, ikke lokal database. Release-kommandoen kjører migreringer før oppstart. Test, Zeitwerk og Brakeman består.
+
+
+
+Blokkerende:  /db  er bare beskyttet av samme PIN som registreringsskjemaet, og sletting er permanent. Sørg for sterk TABLET_PASSCODE  som Fly-secret, og bekreft at  DATABASE_URL  peker på rovde-lager-db . Bilder lagres på Fly-volumet, så ta backup av både Postgres og volumet før bruk. 

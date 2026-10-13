@@ -14,7 +14,14 @@ Rails-applikasjon for nettbrettbasert registrering og sesonglagring av kjøretø
 - Vipps QR-panel på nettbrettet med automatisk lukking ved fullført, avbrutt eller feilet betaling.
 - Signaturverifiserte Vipps-webhooks, idempotent capture og betaling først etter `CAPTURED`.
 - PDF-faktura og PDF-kvittering med MVA-spesifikasjon. Kvittering for Vipps-betaling sendes bare etter bekreftet capture.
+- Søkbar oversikt over registrerte lagringsavtaler, med bilder, hentedato, totalsum og betalingsstatus.
 - Hamneleige med Vipps Login, Brønnøysund-oppslag, døgnregistrering og PDF-faktura på 1 500 kr per døgn ekskl. MVA.
+
+## Avtaleoversikt
+
+Den innloggede registreringssiden har en `db`-knapp som åpner `/db`. Oversikten kan søke på registreringsnummer eller kundenavn, viser bilder, hentedato, **Pris (totalsum)** og betalingsstatus, og lar registreringen slettes permanent.
+
+Totalsummen er `total_price_with_vat` når MVA er beregnet for en bedriftskunde, ellers `total_price`.
 
 ## Hamneleige
 

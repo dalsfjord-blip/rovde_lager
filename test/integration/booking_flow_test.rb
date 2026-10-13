@@ -80,6 +80,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "p", "Ola Nordmann"
     assert_select "p", "AB12345 · 4.5 m"
     assert_includes response.body, "1. april 2026"
+    assert_select "th", "Pris (totalsum)"
+    assert_includes response.body, "3 150 kr"
     assert_select "span", "paid"
     assert_select "form[action='#{database_record_path(agreement, q: "AB12345")}'][method='post']"
 

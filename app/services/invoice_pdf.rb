@@ -14,9 +14,9 @@ class InvoicePdf
       pdf.text "Forfallsdato: #{@agreement.invoice_due_date.strftime('%d.%m.%Y')}"
       pdf.move_down 18
       pdf.text "Fakturamottaker", style: :bold
-      pdf.text @agreement.billing_company_name
-      pdf.text "Org.nr: #{@agreement.billing_organization_number}"
-      pdf.text @agreement.billing_email
+      pdf.text @agreement.invoice_recipient_name
+      pdf.text "Org.nr: #{@agreement.billing_organization_number}" if @agreement.business_invoice?
+      pdf.text @agreement.invoice_recipient_email
       pdf.move_down 18
       pdf.text "Referanse: #{@agreement.reference_number}"
       pdf.move_down 8
@@ -26,6 +26,7 @@ class InvoicePdf
       end
       pdf.move_down 18
       pdf.text "Beløp ekskl. MVA: #{format_amount(@agreement.net_price)}", align: :right
+      pdf.text "Fakturagebyr: #{format_amount(@agreement.private_invoice_fee)}", align: :right if @agreement.private_invoice_fee.positive?
       pdf.text "MVA (25 %): #{format_amount(@agreement.vat_amount)}", align: :right
       pdf.text "Å betale: #{format_amount(@agreement.total_price_with_vat)}", align: :right, style: :bold
       pdf.move_down 24

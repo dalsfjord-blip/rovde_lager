@@ -107,6 +107,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     assert_select "button[name='rental_agreement[payment_method]'][value='vipps']", "Betal med Vipps"
     assert_select "button#manual_payment_button[name='rental_agreement[payment_method]'][value='manual'][data-turbo-confirm]", "Kort/kontant/krav"
     assert_select "button[data-payment-method='invoice']", "Bedriftskunde"
+    assert_select "button#private_invoice_button[name='rental_agreement[payment_method]'][value='private_invoice']", "Privatkundefaktura"
+    assert_includes response.body, "Vil du sende faktura til privatkunde? Fakturaen sendes uten MVA og med et fakturagebyr på 100 NOK."
     assert_select "button#send_invoice_button[name='rental_agreement[payment_method]'][value='invoice']", "Betal senere"
     assert_select "input[name='rental_agreement[billing_company_name]']", 1
     assert_select "input[name='rental_agreement[billing_organization_number]']", 1
@@ -134,6 +136,22 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Registrering"
+  end
+
+  test "registers a private invoice with an invoice fee" do
+    sign_in
+
+    post storage_items_path, params: registration_params(payment_method: "private_invoice")
+
+    agreement = RentalAgreement.last
+    assert_redirected_to storage_items_path(new: true)
+    assert_equal "private_invoice", agreement.payment_method
+    assert_equal "invoice_pending", agreement.payment_status
+    assert_equal 0, agreement.vat_amount.to_f
+    assert_equal 100, agreement.private_invoice_fee.to_f
+    assert_equal 3250, agreement.total_price_with_vat.to_f
+    assert_nil agreement.billing_company_name
+    assert_nil agreement.billing_organization_number
   end
 
   test "registers a private manual payment as paid" do

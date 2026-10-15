@@ -160,9 +160,12 @@
 
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Betaling</h2>
-      <%= f.hidden_field :payment_method, id: "payment_method", value: "vipps", required: true %>
+      <%= f.hidden_field :payment_method, id: "payment_method", value: @agreement.payment_method || "vipps", required: true %>
       <%= f.hidden_field :business_customer, id: "business_customer", value: @agreement.business_customer? ? "1" : "0" %>
-      <button type="button" id="business_customer_button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Bedriftskunde</button>
+      <div class="grid gap-3 md:grid-cols-2">
+        <button type="button" id="business_customer_button" data-payment-method="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Bedriftskunde</button>
+        <button type="submit" id="private_invoice_button" name="rental_agreement[payment_method]" value="private_invoice" data-payment-method="private_invoice" data-turbo-confirm="Vil du sende faktura til privatkunde? Fakturaen sendes uten MVA og med et fakturagebyr på 100 NOK." class="w-full min-h-16 bg-pink-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium">Privatkundefaktura</button>
+      </div>
       <div id="business_invoice_fields" class="mt-4 space-y-4 border-t border-gray-200 pt-4" hidden>
         <div class="flex items-center justify-between gap-4">
           <p class="text-sm text-gray-600">Velg bedrift for å søke opp organisasjonsnummer og bedriftsnavn fra Brønnøysundregistrene.</p>
@@ -193,9 +196,8 @@
       </div>
       <div class="mt-4 grid gap-3 md:grid-cols-3">
         <button type="submit" name="rental_agreement[payment_method]" value="vipps" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="display: block; background-color: #FF5B24;">Betal med Vipps</button>
-<button type="submit" id="manual_payment_button" name="rental_agreement[payment_method]" value="manual" data-turbo-confirm="Bekrefter du at betalingen er mottatt og skal registreres som betalt?" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="background-color: #16a34a; margin-left: 12px;">
-  Kort/kontant/krav
-</button>        <button type="submit" id="send_invoice_button" name="rental_agreement[payment_method]" value="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium" hidden>Betal senere</button>
+        <button type="submit" id="manual_payment_button" name="rental_agreement[payment_method]" value="manual" data-turbo-confirm="Bekrefter du at betalingen er mottatt og skal registreres som betalt?" class="w-full min-h-16 text-white px-4 py-2 rounded-lg text-lg font-medium" style="background-color: #16a34a; margin-left: 6px;">Kort/kontant/tæpp</button>
+        <button type="submit" id="send_invoice_button" name="rental_agreement[payment_method]" value="invoice" class="w-full min-h-16 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-lg font-medium" hidden>Betal senere</button>
       </div>
     </div>
 
@@ -203,6 +205,7 @@
       <h2 class="text-xl font-semibold mb-4 text-gray-700">Sammendrag</h2>
       <p class="text-gray-700">Total meter: <strong id="total_meters"><%= @agreement.total_meters || 0 %></strong></p>
       <p class="text-gray-700">Pris ekskl. MVA: <strong id="net_price"><%= number_to_currency(@agreement.net_price) %></strong></p>
+      <p id="invoice_fee_summary" class="text-gray-700" hidden>Fakturagebyr: <strong id="invoice_fee">100 NOK</strong></p>
       <p id="vat_summary" class="text-gray-700" hidden>MVA (25 %): <strong id="vat_amount"><%= number_to_currency(@agreement.vat_amount || 0) %></strong></p>
       <p class="text-gray-700"><span id="total_price_label">Pris</span>: <strong id="total_price"><%= number_to_currency(@agreement.total_price_with_vat || @agreement.total_price || 0) %></strong></p>
     </div>
@@ -229,12 +232,14 @@
     const businessCustomer = document.getElementById("business_customer");
     const businessInvoiceFields = document.getElementById("business_invoice_fields");
     const sendInvoiceButton = document.getElementById("send_invoice_button");
+    const privateInvoiceButton = document.getElementById("private_invoice_button");
     const manualPaymentButton = document.getElementById("manual_payment_button");
     const closeBusinessCustomer = document.getElementById("close_business_customer");
     const billingCompanyName = document.getElementById("billing_company_name");
     const billingOrganizationNumber = document.getElementById("billing_organization_number");
     const billingEmail = document.getElementById("billing_email");
     const brregResults = document.getElementById("brreg_results");
+    const invoiceFeeSummary = document.getElementById("invoice_fee_summary");
     const vatSummary = document.getElementById("vat_summary");
     const vatAmount = document.getElementById("vat_amount");
     const totalPriceLabel = document.getElementById("total_price_label");
@@ -272,20 +277,22 @@
 
     contractText.addEventListener("scroll", enableContractApproval);
 
-    const updatePriceSummary = (businessCustomerSelected) => {
+    const updatePriceSummary = (businessCustomerSelected, privateInvoiceSelected) => {
       const totalMeters = Array.from(document.querySelectorAll("[data-items-target='meters']")).reduce((total, input) => total + (parseFloat(input.value) || 0), 0);
       const priceExcludingVat = totalMeters * 700;
       const vat = businessCustomerSelected ? priceExcludingVat * 0.25 : 0;
+      const invoiceFee = privateInvoiceSelected ? 100 : 0;
       const formatPrice = (price) => `${price.toLocaleString("no-NO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} NOK`;
 
       document.getElementById("net_price").textContent = formatPrice(priceExcludingVat);
       document.getElementById("vat_amount").textContent = formatPrice(vat);
-      document.getElementById("total_price").textContent = formatPrice(priceExcludingVat + vat);
+      document.getElementById("total_price").textContent = formatPrice(priceExcludingVat + vat + invoiceFee);
     };
 
     const setPaymentMethod = (method) => {
       const businessCustomerSelected = method === "invoice";
-      paymentMethod.value = "vipps";
+      const privateInvoiceSelected = method === "private_invoice";
+      paymentMethod.value = method;
       businessCustomer.value = businessCustomerSelected ? "1" : "0";
       businessInvoiceFields.hidden = !businessCustomerSelected;
       sendInvoiceButton.hidden = !businessCustomerSelected;
@@ -293,9 +300,10 @@
       billingCompanyName.required = businessCustomerSelected;
       billingOrganizationNumber.required = businessCustomerSelected;
       billingEmail.required = businessCustomerSelected;
+      invoiceFeeSummary.hidden = !privateInvoiceSelected;
       vatSummary.hidden = !businessCustomerSelected;
-      totalPriceLabel.textContent = businessCustomerSelected ? "Pris inkl. MVA" : "Pris";
-      updatePriceSummary(businessCustomerSelected);
+      totalPriceLabel.textContent = businessCustomerSelected ? "Pris inkl. MVA" : privateInvoiceSelected ? "Å betale" : "Pris";
+      updatePriceSummary(businessCustomerSelected, privateInvoiceSelected);
 
       if (!businessCustomerSelected) {
         billingCompanyName.value = "";

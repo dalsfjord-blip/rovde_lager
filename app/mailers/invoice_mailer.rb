@@ -7,11 +7,15 @@ class InvoiceMailer < ApplicationMailer
     }
 
     mail(
-      to: agreement.billing_email,
+      to: agreement.invoice_recipient_email,
       from: ENV.fetch("INVOICE_FROM_EMAIL", "faktura@rovdeindustripark.app"),
-      cc: ENV.fetch("ACCOUNTING_EMAIL", "rovdeindustri@faktura.poweroffice.net"),
+      cc: accounting_email,
       subject: "Faktura #{agreement.invoice_number} fra Rovde Industripark"
     )
+  end
+
+  def accounting_email
+    ENV.fetch("ACCOUNTING_EMAIL", "rovdeindustri@faktura.poweroffice.net") unless Rails.env.development?
   end
 
   def paid_receipt(agreement)

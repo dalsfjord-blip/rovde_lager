@@ -45,6 +45,37 @@ class InvoiceDeliveryJobTest < ActionMailer::TestCase
     assert_includes ActionMailer::Base.deliveries.last.body.encoded, "Kontonummer for innbetaling: 3626 58 20780"
   end
 
+  test "sends a private invoice without VAT and with the invoice fee" do
+    agreement = RentalAgreement.create!(
+      customer_name: "Ola Nordmann",
+      customer_phone: "12345678",
+      customer_email: "ola@example.com",
+      contract_approved: true,
+      total_meters: 1,
+      total_price: 700,
+      total_price_with_vat: 800,
+      private_invoice_fee: 100,
+      vat_amount: 0,
+      business_customer: false,
+      payment_method: "private_invoice",
+      payment_status: "invoice_pending"
+    )
+
+    assert_emails 1 do
+      InvoiceDeliveryJob.perform_now(agreement.id)
+    end
+
+    agreement.reload
+    email = ActionMailer::Base.deliveries.last
+    assert_equal "invoice_sent", agreement.payment_status
+    assert_equal [ "ola@example.com" ], email.to
+    assert_equal "faktura@rovdeindustripark.app", email.from.first
+    assert_equal [ "rovdeindustri@faktura.poweroffice.net" ], email.cc
+    assert_equal "faktura-#{agreement.invoice_number}.pdf", email.attachments.first.filename
+    assert_equal 100, agreement.private_invoice_fee.to_f
+    assert_equal 800, agreement.total_price_with_vat.to_f
+  end
+
   private
 
   def create_invoice_agreement

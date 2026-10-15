@@ -13,6 +13,7 @@ class StorageItemsController < ApplicationController
 
   def create
     @agreement.assign_attributes(agreement_params)
+    clear_business_billing_details_for_private_invoice
     calculate_totals
     set_payment_status
 
@@ -67,17 +68,27 @@ class StorageItemsController < ApplicationController
     )
   end
 
+  def clear_business_billing_details_for_private_invoice
+    return unless @agreement.private_invoice?
+
+    @agreement.billing_company_name = nil
+    @agreement.billing_organization_number = nil
+    @agreement.billing_email = nil
+  end
+
   def calculate_totals
     total_meters = @agreement.storage_items.reject(&:marked_for_destruction?).sum { |item| item.meters || 0 }
     total_price = total_meters * 700
+    private_invoice_fee = @agreement.private_invoice? ? RentalAgreement::PRIVATE_INVOICE_FEE : 0
     @agreement.total_meters = total_meters
     @agreement.total_price = total_price
+    @agreement.private_invoice_fee = private_invoice_fee
     if @agreement.business_customer?
       @agreement.vat_amount = (total_price * RentalAgreement::VAT_RATE).round(2)
       @agreement.total_price_with_vat = total_price + @agreement.vat_amount
     else
       @agreement.vat_amount = 0
-      @agreement.total_price_with_vat = total_price
+      @agreement.total_price_with_vat = total_price + private_invoice_fee
     end
   end
 

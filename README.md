@@ -8,7 +8,7 @@ Rails-applikasjon for nettbrettbasert registrering og sesonglagring av kjøretø
 - Registreringsnummer og oppslag mot Statens vegvesens kjøretøydata når API-nøkkel er konfigurert.
 - Inntil ti bilder per avtale via Active Storage.
 - Avtaletekst på e-post med HTML- og tekstversjon.
-- Privatkunde betaler 700 kr per meter uten MVA via Vipps ePayment, eller får manuelt bekreftet kort-, kontant- eller Vippskrav-betaling.
+- Privatkunde betaler 700 kr per meter uten MVA via Vipps ePayment, får manuelt bekreftet kort-, kontant- eller Vippskrav-betaling, eller kan få PDF-faktura med 100 kr fakturagebyr.
 - Bedriftskunde kan velge Vipps med 25 % MVA eller PDF-faktura.
 - Brønnøysund-oppslag for bedriftsnavn og organisasjonsnummer.
 - Vipps QR-panel på nettbrettet med automatisk lukking ved fullført, avbrutt eller feilet betaling.
@@ -58,6 +58,10 @@ For privatkunder kan medarbeideren velge **Kort/kontant/krav** etter å ha kontr
 
 Bedriftskunde oppgir navn, organisasjonsnummer og faktura-e-post. Appen beregner 25 % MVA, sender PDF-faktura og lagrer avtalen med status `invoice_sent`. Betaling av faktura avstemmes foreløpig utenfor applikasjonen.
 
+### Privatkundefaktura
+
+Knappen **Privatkundefaktura** ber om bekreftelse før avtalen lagres. Fakturaen sendes til kundens registrerte e-postadresse uten MVA, med et fakturagebyr på 100 kr lagt til totalsummen. PDF-en bruker kundens navn som fakturamottaker og har ikke organisasjonsnummer.
+
 ## Lokal oppstart
 
 ```bash
@@ -91,10 +95,11 @@ APP_HOST=<offentlig-https-host>
 RESEND_API_KEY
 SMTP_FROM_EMAIL
 INVOICE_FROM_EMAIL
+ACCOUNTING_EMAIL
 USE_RESEND=true
 ```
 
-Produksjon bruker Resend SMTP. Avsenderdomener må være verifisert før produksjonsbruk.
+Fakturaer sendes fra `INVOICE_FROM_EMAIL`, med fallback `faktura@rovdeindustripark.app`. Ved neste produksjonsdeploy skal `ACCOUNTING_EMAIL` settes til regnskapsmottakerens e-postadresse for kopi av fakturaer. Lokal utvikling setter ikke kopi, slik at testfakturaer bare går til mottakeren. Produksjon bruker Resend SMTP. Avsenderdomener må være verifisert før produksjonsbruk.
 
 ## Nummerering
 
@@ -116,6 +121,7 @@ Lokal disk lagrer filer under `storage/`. Produksjon trenger varig objektlagring
 - Sett Vipps-produksjonsnøkler og en separat `VIPPS_WEBHOOK_SECRET` som Fly-secrets.
 - Bruk fast offentlig HTTPS-domene og registrer produksjonswebhook.
 - Verifiser Resend-domener for avtale- og faktura-e-post.
+- Sett `ACCOUNTING_EMAIL` som deploy-secret for kopi av fakturaer i produksjon.
 - Sett opp varig lagring og backup for opplastede bilder.
 - Kjør ende-til-ende-test for Vipps, avbrudd, gjentatte webhooks og faktura.
 
